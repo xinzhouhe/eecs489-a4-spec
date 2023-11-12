@@ -1,6 +1,6 @@
 # Assignment 4: Designing a Static Router
 
-### Due: Friday December 10th at 11:59 PM
+### Due: December 6th, 2023 at 11:59 PM
 
 ## Overview
 
@@ -8,11 +8,11 @@ In this assignment, you will be writing a simple router configured with a static
 
 Your task is to implement the forwarding logic so packets go to the correct interface.
 
-This is not a simulation: your router will route real packets to HTTP servers sitting behind your router. When you have finished your router, you should be able to access these servers using regular client software (e.g., `wget/curl`). In addition, you should be able to `ping` and `traceroute` to and through a functioning Internet router. This is the topology you will be using for your development:
+This is not a simulation: your router *will* route real packets to HTTP servers sitting behind your router. When you have finished your router, you should be able to access these servers using regular client software (e.g., `wget/curl`). In addition, you should be able to `ping` and `traceroute` to and through a functioning Internet router. This is the topology you will be using for your development:
 
 <img src="diagram.png" title="topology" />
 
-You will use Mininet, to set up these topologies of emulated routers and process packets in them. Once your router is functioning correctly, you will be able to perform all of the following operations:
+You will use Mininet to set up these topologies of emulated routers and process packets in them. Once your router is functioning correctly, you will be able to perform all of the following operations:
 
 * Ping any of the router's interfaces from the servers and from the VM.
 * Traceroute to any of the router's interface IP addresses.
@@ -41,9 +41,9 @@ After completing this programming assignment, students should be able to:
 ## Getting Started
 
 ### Virtual Machine
-Your assignment will run in a virtual machine. The password is the same as the username for this VM. A version compatible with VMWare can be downloaded [here](https://www.dropbox.com/s/xe5381oxqh3u29v/eecs489p4-vmware.ova?dl=0).
+Your assignment will run in a virtual machine. The password is the same as the username for this VM. A version compatible with VMWare can be downloaded [here](https://www.dropbox.com/s/xe5381oxqh3u29v/eecs489p4-vmware.ova?dl=0). TODO FIX LINK
 
-This VM is different from the ones used for the first three assignments, it contains extra configuration files necessary to complete the project.
+This VM is different from the ones used for the first three assignments. It contains extra configuration files necessary to complete the project.
 
 ### Starter Code
 
@@ -79,15 +79,15 @@ make
 ./sr
 ```
 
-Mininet and POX need to be started for SR to run. From the `$HOME/p4_starter_code` directory, you need to first run `sudo ./run_mininet.sh`, then open a separate terminal and run `sudo ./run_pox.sh`.
+Mininet and POX need to be started for SR (static router) to run. From the `$HOME/p4_starter_code` directory, you need to first run `sudo ./run_mininet.sh`. Then, open a separate terminal and run `sudo ./run_pox.sh`.
 
-By default SR looks for `auth_key` from the current working directory, so make sure that file exists in the directory you are running SR. You can copy one from `$HOME/p4_starter_code/router/auth_key`).
+By default, SR looks for `auth_key` from the current working directory, so make sure that file exists in the directory you are running SR. You can copy one from `$HOME/p4_starter_code/router/auth_key`.
 
-By default SR looks for `rtable` from the current working directory. This can be overridden by `-r` option.
+By default, SR looks for `rtable` from the current working directory. This can be overridden by the `-r` option.
 
 <a name="background"></a>
 ## Background: Routing
-This section has an outline of the forwarding logic for a router, although it does not contain all the details. There are two main parts to this assignment: IP forwarding, and handling ARP.
+This section has an outline of the forwarding logic for a router, although it does not contain all the details. There are two main parts to this assignment: IP forwarding and handling ARP.
 
 When an IP packet arrives at your router, it arrives inside an Ethernet frame. Your router needs to check if it is the final destination of the packet, and if not, forward it along the correct link based on its forwarding table. The forwarding table names the IP address of the next hop. The router must use ARP to learn the Ethernet address of the next hop IP address, so it can address the Ethernet frame correctly.
 
@@ -114,11 +114,11 @@ ICMP sends control information. In this assignment, your router will use ICMP to
 
 * **Echo reply (type 0):** Sent in response to an echo request (`ping`) to one of the router's interfaces. (This is only for echo requests to any of the router's IPs. An echo request sent elsewhere should be forwarded).
 * **Destination net unreachable (type 3, code 0):** Sent if there is a non-existent route to the destination IP (no matching entry in routing table when forwarding an IP packet).
-* **Destination host unreachable (type 3, code 1):** Sent after five ARP requests were sent to the next-hop IP without a response.
+* **Destination host unreachable (type 3, code 1):** Sent after seven ARP requests were sent to the next-hop IP without a response.
 * **Port unreachable (type 3, code 3):** Sent if an IP packet containing a UDP or TCP payload is sent to one of the router's interfaces. This is needed for `traceroute` to work.
 * **Time exceeded (type 11, code 0):** Sent if an IP packet is discarded during processing because the TTL field is 0. This is also needed for `traceroute` to work.
 
-Some ICMP messages may come from the source address of any of the router interfaces, while others must come from a specific interface: refer to [RFC 792](https://tools.ietf.org/html/rfc792) for details. As mentioned above, the only incoming ICMP message destined towards the router's IPs that you have to explicitly process are ICMP echo requests. You may want to create additional structs for ICMP messages for convenience, but make sure to use the `packed` attribute so that the compiler doesn't try to align the fields in the struct to word boundaries: [GCC Type Attributes](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Type-Attributes.html).
+Some ICMP messages may come from the source address of any of the router interfaces, while others must come from a specific interface. Please refer to [RFC 792](https://tools.ietf.org/html/rfc792) for details. As mentioned above, the only incoming ICMP message destined towards the router's IPs that you have to explicitly process are ICMP echo requests. You may want to create additional structs for ICMP messages for convenience, but make sure to use the `packed` attribute so that the compiler doesn't try to align the fields in the struct to word boundaries. To learn more, feel free to look at [GCC Type Attributes](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Type-Attributes.html).
 
 #### Address Resolution Protocol
 ARP is needed to determine the next-hop MAC address that corresponds to the next-hop IP address stored in the routing table. Without the ability to generate an ARP request and process ARP replies, your router would not be able to fill out the destination MAC address field of the raw Ethernet frame you are sending over the outgoing interface. Analogously, without the ability to process ARP requests and generate ARP replies, no other router could send your router Ethernet frames. Therefore, your router must generate and process ARP requests and replies.
@@ -129,7 +129,7 @@ When forwarding a packet to a next-hop IP address, the router should first check
 
 In the case of an ARP request, you should only send an ARP reply if the target IP address is one of your router's IP addresses.
 
-Note that ARP requests are sent to the broadcast MAC address (`ff-ff-ff-ff-ff-ff`). ARP replies are sent directly to the requester's MAC address.
+Note: ARP requests are sent to the broadcast MAC address (`ff-ff-ff-ff-ff-ff`). ARP replies are sent directly to the requester's MAC address.
 
 #### IP Packet Destinations
 An incoming IP packet may be destined for one of your router's IP addresses, or it may be destined elsewhere. If it is sent to one of your router's IP addresses, you should take the following actions, consistent with the section on protocols above:
@@ -154,7 +154,7 @@ This method, located in `sr_vns_comm.c`, will send `len` bytes of `buf` out of t
 You should not free the buffer given to you in `sr_handlepacket()` (this is why you can think of the buffer as being "lent" to you). You are responsible for doing correct memory management on the buffers that `sr_send_packet` borrows from you (that is, `sr_send_packet` will not call `free()` on the buffers that you pass it).
 
 * `sr_arpcache_sweepreqs(struct sr_instance *sr)`
-The assignment requires you to send an ARP request about once a second until a reply comes back or you have sent five requests. This function is defined in `sr_arpcache.c` and called every second, and you should add code that iterates through the ARP request queue and re-sends any outstanding ARP requests that haven't been sent in the past second. If an ARP request has been sent 7 times with no response, a destination host unreachable should go back to all the sender of packets that were waiting on a reply to this ARP request.
+The assignment requires you to send an ARP request about once a second until a reply comes back or you have sent seven requests. This function is defined in `sr_arpcache.c` and called every second, and you should add code that iterates through the ARP request queue and re-sends any outstanding ARP requests that haven't been sent in the past second. If an ARP request has been sent 7 times with no response, a destination host unreachable should go back to all the sender of packets that were waiting on a reply to this ARP request.
 
 ### Data Structures
 
