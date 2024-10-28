@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     char *user = 0;
     char *server = DEFAULT_SERVER;
     char *rtable = DEFAULT_RTABLE;
-    char *template = NULL;
+    char *template_name = NULL;
     unsigned int port = DEFAULT_PORT;
     unsigned int topo = DEFAULT_TOPO;
     char *logfile = 0;
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
                 rtable = optarg;
                 break;
             case 'T':
-                template = optarg;
+                template_name = optarg;
                 break;
         } /* switch */
     } /* -- while -- */
@@ -108,12 +108,12 @@ int main(int argc, char **argv)
     sr_init_instance(&sr);
 
     /* -- set up routing table from file -- */
-    if(template == NULL) {
-        sr.template[0] = '\0';
+    if(template_name == NULL) {
+        sr.template_name[0] = '\0';
         sr_load_rt_wrap(&sr, rtable);
     }
     else
-        strncpy(sr.template, template, 30);
+        strncpy(sr.template_name, template_name, 30);
 
     sr.topo_id = topo;
     strncpy(sr.host,host,32);
@@ -136,8 +136,8 @@ int main(int argc, char **argv)
     }
 
     Debug("Client %s connecting to Server %s:%d\n", sr.user, server, port);
-    if(template)
-        Debug("Requesting topology template %s\n", template);
+    if(template_name)
+        Debug("Requesting topology template_name %s\n", template_name);
     else
         Debug("Requesting topology %d\n", topo);
 
@@ -147,8 +147,8 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if(template != NULL && strcmp(rtable, "rtable.vrhost") == 0) { /* we've recv'd the rtable now, so read it in */
-        Debug("Connected to new instantiation of topology template %s\n", template);
+    if(template_name != NULL && strcmp(rtable, "rtable.vrhost") == 0) { /* we've recv'd the rtable now, so read it in */
+        Debug("Connected to new instantiation of topology template_name %s\n", template_name);
         sr_load_rt_wrap(&sr, "rtable.vrhost");
     }
     else {
