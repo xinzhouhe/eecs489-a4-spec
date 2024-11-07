@@ -32,7 +32,8 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 
 add_executable(StaticRouter ${SRCS})
 target_link_libraries(StaticRouter proto spdlog::spdlog)
-target_include_directories(StaticRouter PRIVATE ${websocketpp_SOURCE_DIR} ${CMAKE_BINARY_DIR}/proto ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(StaticRouter SYSTEM PRIVATE ${websocketpp_SOURCE_DIR})
+target_include_directories(StaticRouter PRIVATE ${CMAKE_BINARY_DIR}/proto ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 CHECK_CXX_SOURCE_RUNS("
     #include <cstdint>
