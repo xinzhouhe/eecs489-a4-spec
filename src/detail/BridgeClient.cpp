@@ -20,6 +20,10 @@ BridgeClient::BridgeClient(std::filesystem::path routingTablePath, std::string p
         onMessage(msg->get_payload());
     });
 
+    client->set_fail_handler([this](auto hdl) {
+        spdlog::error("Connection failed (is POX running?)");
+    });
+
     std::string wsUri = "ws://localhost:8080";
     websocketpp::lib::error_code ec;
     WSClient::connection_ptr con = client->get_connection(wsUri, ec);
