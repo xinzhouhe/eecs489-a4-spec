@@ -83,7 +83,7 @@ void print_hdr_ip(uint8_t* buf) {
   spdlog::info("\tfragment offset: {}", ntohs(iphdr->ip_off) & IP_OFFMASK);
   spdlog::info("\tTTL: {}", iphdr->ip_ttl);
   spdlog::info("\tprotocol: {}", iphdr->ip_p);
-  spdlog::info("\tchecksum: {}", iphdr->ip_sum);
+  spdlog::info("\tchecksum: {}", static_cast<uint32_t>(iphdr->ip_sum));
   spdlog::info("\tsource: ");
   print_addr_ip_int(ntohl(iphdr->ip_src));
   spdlog::info("\tdestination: ");
@@ -96,7 +96,7 @@ void print_hdr_icmp(uint8_t* buf) {
   spdlog::info("ICMP header:");
   spdlog::info("\ttype: {}", icmp_hdr->icmp_type);
   spdlog::info("\tcode: {}", icmp_hdr->icmp_code);
-  spdlog::info("\tchecksum: {}", icmp_hdr->icmp_sum);
+  spdlog::info("\tchecksum: {}", static_cast<uint32_t>(icmp_hdr->icmp_sum));
 }
 
 /* Prints out fields in ARP header */
