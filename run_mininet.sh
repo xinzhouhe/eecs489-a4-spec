@@ -8,4 +8,4 @@ if [ ! -d ".venv" ]; then
 fi
 
 source .venv/bin/activate
-sudo -E env "PATH=$PATH" python run_mininet.py
+sudo -E env "PATH=$PATH" python topology.py
