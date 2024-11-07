@@ -8,6 +8,7 @@
 #include <set>
 #include <unordered_map>
 #include <thread>
+#include <optional>
 #include <mutex>
 
 #include "PacketSender.h"
