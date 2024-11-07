@@ -12,3 +12,7 @@ void BridgeSender::sendPacket(Packet packet, const std::string& iface) {
 
     send(message);
 }
+
+void BridgeSender::send(const router_bridge::ProtocolMessage& message) {
+    client->send(connection, message.SerializeAsString(), websocketpp::frame::opcode::binary);
+}

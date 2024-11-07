@@ -7,28 +7,32 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CheckCXXSourceRuns)
 include(FetchContent)
 
+
 FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.11.0 # Replace with the desired version
+        GIT_TAG v1.14.1
 )
-
 FetchContent_MakeAvailable(spdlog)
+
+FetchContent_Declare(
+        websocketspp
+        GIT_REPOSITORY https://github.com/zaphoyd/websocketpp.git
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(websocketspp)
+
+message(STATUS "WEBSOCKETPP_INCLUDE: ${websocketpp_SOURCE_DIR}")
 
 add_subdirectory(proto)
 
 file(GLOB_RECURSE SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
 
-# Find Boost libraries (required by WebSocket++)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
-# Find WebSocket++ package
-find_package(websocketpp REQUIRED)
-
-
 add_executable(StaticRouter ${SRCS})
-target_link_libraries(StaticRouter proto websocketpp::websocketpp spdlog::spdlog)
-target_include_directories(StaticRouter PRIVATE ${CMAKE_BINARY_DIR}/proto ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(StaticRouter proto spdlog::spdlog)
+target_include_directories(StaticRouter PRIVATE ${websocketpp_SOURCE_DIR} ${CMAKE_BINARY_DIR}/proto ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 CHECK_CXX_SOURCE_RUNS("
     #include <cstdint>

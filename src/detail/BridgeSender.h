@@ -17,9 +17,7 @@ public:
     void sendPacket(Packet packet, const std::string& iface) override;
 
 private:
-    void send(const router_bridge::ProtocolMessage& message) {
-        client->send(connection, message.SerializeAsString(), websocketpp::frame::opcode::binary);
-    }
+    void send(const router_bridge::ProtocolMessage& message);
 
     std::shared_ptr<WSClient> client;
     WSClient::connection_ptr connection;

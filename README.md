@@ -46,9 +46,9 @@ For this assignment, you can write all of your code locally (although we will st
 You can also choose to develop on the provided AWS image.
 
 #### Local Setup Only
-If you choose to develop locally, make sure you have CMake installed. If not, install it. On a Mac, you should use Homebrew and run
+If you choose to develop locally, make sure you have CMake and Boost installed. If not, install it. On a Mac, you should use Homebrew and run
 ```bash
-brew install cmake
+brew install cmake boost
 ```
 
 Additionally, this assignment **requires** that you have Protocol Buffers installed. Protocol Buffers is a serialization format that we use to communicate between the Mininet switch and the router. If you are on Mac, you can install it using Homebrew:
@@ -127,7 +127,7 @@ $ make
 You can then run the router with the following command:
 
 ```bash
-$ ./sr -r ../rtable
+$ ./StaticRouter -r ../rtable
 ```
 
 Mininet and POX need to be started for SR (static router) to run.
@@ -209,29 +209,18 @@ Packets destined elsewhere should be forwarded using your normal forwarding logi
 <a name="code-overview"></a>
 ## Code Overview
 
-### Basic Functions
-Your router receives and sends Ethernet frames. The basic functions to handle these functions are:
-
-* `sr_handlepacket(struct sr_instance* sr, uint8_t *packet, unsigned int len, char* interface)`
-  This method, located in `sr_router.c`, is called by the router each time a packet is received. The `packet` argument points to the packet buffer which contains the full packet including the Ethernet header. The name of the receiving `interface` is passed into the method as well.
-
-* `sr_send_packet(struct sr_instance* sr, uint8_t* buf, unsigned int len, const char* iface)`
-  This method, located in `sr_vns_comm.c`, will send `len` bytes of `buf` out of the interface specified by `iface`. The `buf` parameter should point to a valid Ethernet frame, and `len` should not go past the end of the frame.
-  You should not free the buffer given to you in `sr_handlepacket()` (this is why you can think of the buffer as being "lent" to you). You are responsible for doing correct memory management on the buffers that `sr_send_packet` borrows from you (that is, `sr_send_packet` will not call `free()` on the buffers that you pass it).
-
-* `sr_arpcache_sweepreqs(struct sr_instance *sr)`
-  The assignment requires you to send an ARP request about once a second until a reply comes back or you have sent seven requests. This function is defined in `sr_arpcache.c` and called every second, and you should add code that iterates through the ARP request queue and re-sends any outstanding ARP requests that haven't been sent in the past second. If an ARP request has been sent 7 times with no response, a destination host unreachable should go back to all the sender of packets that were waiting on a reply to this ARP request.
-
 ### Data Structures
 
 #### The Router (`StaticRouter.h/cpp`)
-The 
+You must implement the forwarding logic in `StaticRouter.cpp`. The router is a simple router that forwards packets based on a static routing table. The router will receive raw Ethernet frames and process the packets just like a real router, then forward them to the correct outgoing interface.
 
 #### The Routing Table (`RoutingTable.h/cpp`)
+You must implement the longest prefix match algorithm in `RoutingTable.cpp`.
+
 The routing table in code is read on from a file (default filename `rtable`, can be set with command line option `-r`). The routing table allows you to look up the information of a interface, and also the next hop IP address and interface for a given destination IP address.
 
-#### The ARP Cache and ARP Request Queue (`sr_arpcache.c/h`)
-You will need to add ARP requests and packets waiting on responses to those ARP requests to the ARP request queue. When an ARP response arrives, you will have to remove the ARP request from the queue and place it onto the ARP cache, forwarding any packets that were waiting on that ARP request. Pseudocode for these operations is provided in `sr_arpcache.h`. The base code already creates a thread that times out ARP cache entries 15 seconds after they are added for you. You must fill out the `sr_arpcache_sweepreqs()` function in `sr_arpcache.c` that gets called every second to iterate through the ARP request queue and re-send ARP requests if necessary. Psuedocode for this is provided in `sr_arpcache.h`.
+#### The ARP Cache and ARP Request Queue (`ArpCache.h/cpp`)
+You must implement most of the functions in `ArpCache.cpp`. The ARP cache is a simple cache that maps IP addresses to MAC addresses. The cache is used to store ARP replies and is used to fill out the destination MAC address of the Ethernet frame when forwarding packets. The cache also times out entries after 15 seconds.
 
 #### Protocol Headers (`protocol.h`)
 Within the router framework you will be dealing directly with raw Ethernet packets. The stub code itself provides some data structures in `sr_protocols.h` which you may use to manipulate headers easily. There are a number of resources which describe the protocol headers in detail. RFC Editor provides the specifications of the packet formats you'll be dealing with:
@@ -270,36 +259,29 @@ In summary, your solution:
 
 <a name="debugging"></a>
 ## How to Debug
-Because your error might be due to some tiny, low-level mistake, trying to read through pages and pages of `printf()` output is a waste of time. While `printf()` is of course useful, you will be able to debug your code much faster if you also log packets and use `gdb`.
+Because your error might be due to some tiny, low-level mistake, trying to read through pages and pages of output is a waste of time. While logging is of course useful, you will be able to debug your code much faster if you also log packets and use `gdb`.
+
+When logging, we encourage you to use `spdlog` to log messages at the correct level. This will allow you to filter out messages that are not relevant to your current debugging task.
+
+Examples of `spdlog` can be found in `utils.cpp`.
 
 ### Protocols: Logging Packets
 You can log the packets received and generated by your SR program by using the -l parameter. The file will be in `pcap` format, so you can use Wireshark or `tcpdump` to read it.
 
+For example,
 ```
-./sr -l logfile.pcap
+./StaticRouter -p my_prefix
 ```
+will output `my_prefix_input.pcap` and `my_prefix_output.pcap`.
 
 Besides SR, you can also use Mininet to monitor the traffic that goes in and out of the emulated nodes, i.e., `router`, `server1` and `server2`. Mininet provides direct access to each emulated node. Using server1 as an example, to see the packets in and out of it, go to the Mininet CLI:
 
 ```
 mininet> server1 sudo tcpdump -n -i server1-eth0
 ```
-
-Or you can bring up a terminal inside `server1` by
-
-```
-mininet> xterm server1
-```
-
-Then inside the newly popped xterm,
-
-```
-xterm# sudo tcpdump -n -i server1-eth0
-```
-
 ### Router
 #### Debugging Functions
-We have provided you with some basic debugging functions in `sr_utils.h`, `sr_utils.c`. Feel free to use them to print out network header information from your packets. Below are some functions you may find useful:
+We have provided you with some basic debugging functions in `utils.h`, `utils.c`. Feel free to use them to print out network header information from your packets. Below are some functions you may find useful:
 
 * `print_hdrs(uint8_t *buf, uint32_t length)`
   Prints out all possible headers starting from the Ethernet header in the packet.
@@ -308,53 +290,16 @@ We have provided you with some basic debugging functions in `sr_utils.h`, `sr_ut
 
 <a name="submitting"></a>
 ## Submitting
-Submission to the autograder will be done [here](https://eecs489.eecs.umich.edu/). Submission policy will be announced when the autograder is released, which we anticipate being around halfway through the assignment.
-
-To submit:
-1. `git push` your work to the github repository we provided for the assignment. Feel free to start with the directory `${HOME}/p4_starter_code` as your git repository using `git init`. You can also copy, move, or rename this directory as well.
-2. Go to autograder website specified above. You can specify what branch on your repository you want us to grade.
-3. Press submit. Your results will show up on that page once grading is finished.
+Submission to the autograder will be done [here](https://g489.eecs.umich.edu/). Submission policy will be announced when the autograder is released, which we anticipate being around halfway through the assignment.
 
 This assignment follows more of a fill-in-the-blank format than the first three, meaning we provide code skeleton that you fill in. Therefore,
 
-Your git repository must include the following:
-* All the code for your router in a folder called `router`.
-* A `README` file with the names and umich uniqnames of the group members.
-* Please **DO NOT** submit or rely on any files other than the provided source code in the VM. All other files (including `Makefile`) will be ignored during the grading process.
-
+The submission may include any files that you have modified or added. However, you must NOT modify any of the following files:
+- `detail/*`
+- `main.cpp`
+- `PacketSender.h`
 
 <a name="important-notes"></a>
-## Important Notes
-
-### Which files should be modified?
-In order to implement the required features. You need to change the source code in the starter code folder. We provide a general guideline on how to change the files. See [RFC2119](https://www.ietf.org/rfc/rfc2119.txt) for interpreting this guideline.
-
-
-Files that **MUST** be changed:
-* `sr_arpcache.c/h`
-* `sr_router.c/h`
-
-Files that **MAY** be changed:
-* `sr_protocol.h`
-* `sr_utils.c/h` (This is where you implement utility functions)
-* `sr_rt.c/h`
-* `sr_if.c/h`
-
-Files that **MUST NOT** be changed:
-* `Makefile`
-* `sr_main.c`
-
-You **MUST NOT** add new source files, which will be ignored by the provided Makefile.
-You **MUST NOT** change the signature of provided functions.
-
-
-
-<a name="faq"></a>
-## FAQ
-* How long is this assignment?
-  In our reference solution, we added around 500 lines of C, including whitespace and comments. Of course, your solution may need fewer or more lines of code, but this gives you an idea a rough idea of the size of the assignment to a first approximation.
-* Can I have a reference implementation?
-  To help you debug your topologies and understand the required behavior we provide a reference binary and you can find it at `$HOME/p4_starter_code/sr_solution`.
 
 ## Acknowledgements
-This programming assignment is based on Stanford's lab 3 from CS 144: Introduction to Computer Networking.
+This programming assignment is based on Stanford's lab 3 from CS 144: Introduction to Computer Networking and translated into C++ by the University of Michigan's EECS 489 F24 staff.
