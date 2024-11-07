@@ -43,7 +43,7 @@ BridgeClient::BridgeClient(std::filesystem::path routingTablePath, std::string p
 void BridgeClient::setInterfaces(const router_bridge::InterfaceUpdate& interfaces) {
     for (const auto& iface : interfaces.interfaces()) {
         mac_addr mac;
-        std::copy(iface.mac().begin(), iface.mac().end(), mac.begin());
+        std::copy(iface.mac().begin(), iface.mac().begin() + mac.size(), mac.begin());
         routingTable->setRoutingInterface(iface.name(), mac, iface.ip());
     }
 
