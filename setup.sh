@@ -7,7 +7,7 @@ cd proto || exit
 
 cd ../py
 # If no virtualenv exists, create one
-if [ ! -d "venv" ]; then
+if [ ! -d ".venv" ]; then
     echo "No virtualenv found. Creating one..."
     python3 -m venv .venv
 fi
