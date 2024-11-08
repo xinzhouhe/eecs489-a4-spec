@@ -28,6 +28,7 @@ void ArpCache::loop() {
 }
 
 void ArpCache::tick() {
+    std::unique_lock lock(mutex);
     // TODO: Your code here
 
 
