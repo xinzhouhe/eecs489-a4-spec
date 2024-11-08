@@ -35,14 +35,9 @@ void ArpCache::tick() {
     // TODO: Your code should end here
 
     // Remove entries that have been in the cache for too long
-    for (auto it = entries.begin(); it != entries.end();) {
-        if (std::chrono::steady_clock::now() - it->second.timeAdded >= std::chrono::seconds(15)) {
-            it = entries.erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
+    std::erase_if(entries, [](const auto& entry) {
+        return std::chrono::steady_clock::now() - entry.second.timeAdded >= std::chrono::seconds(15);
+    });
 }
 
 void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
