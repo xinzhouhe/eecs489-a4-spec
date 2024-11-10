@@ -10,6 +10,7 @@
 #include <thread>
 #include <optional>
 #include <mutex>
+#include <chrono>
 
 #include "PacketSender.h"
 #include "RouterTypes.h"
@@ -39,7 +40,8 @@ struct ArpRequest
 
 class ArpCache {
 public:
-    ArpCache(std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<RoutingTable> routingTable);
+    ArpCache(std::chrono::milliseconds timeout,
+        std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<RoutingTable> routingTable);
     ~ArpCache();
 
     void loop();
@@ -53,6 +55,8 @@ public:
 private:
     void tick();
 
+    std::chrono::milliseconds timeout;
+
     std::mutex mutex;
     std::unique_ptr<std::thread> thread;
     std::atomic<bool> shutdown = false;
@@ -62,7 +66,6 @@ private:
 
     std::unordered_map<ip_addr, ArpEntry> entries;
     std::unordered_map<ip_addr, ArpRequest> requests;
-
 };
 
 

@@ -7,7 +7,7 @@
 
 class StaticRouter {
 public:
-    StaticRouter(std::shared_ptr<RoutingTable> routingTable, std::shared_ptr<IPacketSender> packetSender);
+    StaticRouter(std::unique_ptr<ArpCache> arpCache, std::shared_ptr<RoutingTable> routingTable, std::shared_ptr<IPacketSender> packetSender);
 
     void handlePacket(std::vector<uint8_t> packet, std::string iface);
 
@@ -17,7 +17,7 @@ private:
     std::shared_ptr<RoutingTable> routingTable;
     std::shared_ptr<IPacketSender> packetSender;
 
-    ArpCache arpCache;
+    std::unique_ptr<ArpCache> arpCache;
 };
 
 

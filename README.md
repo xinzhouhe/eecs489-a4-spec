@@ -209,7 +209,8 @@ Packets destined elsewhere should be forwarded using your normal forwarding logi
 <a name="code-overview"></a>
 ## Code Overview
 
-### Data Structures
+### Classes
+**Note:** You can and should modify the provided classes as you need (please don't try to write all your code in the `handlePacket` function for the `StaticRouter`). You are even free to modify/delete all of the starter code. The only requirement is that the `StaticRouter` constructor and the `StaticRouter::handlePacket` signatures remain the same and that they are declared in `StaticRouter.h`. You may also **not** make modifications to the CMakelists.txt file.
 
 #### The Router (`StaticRouter.h/cpp`)
 You must implement the forwarding logic in `StaticRouter.cpp`. The router is a simple router that forwards packets based on a static routing table. The router will receive raw Ethernet frames and process the packets just like a real router, then forward them to the correct outgoing interface.

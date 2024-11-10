@@ -30,6 +30,7 @@ RoutingTable::RoutingTable(const std::filesystem::path& routingTablePath) {
         if (inet_pton(AF_INET, dest.c_str(), &dest_ip) != 1 ||
             inet_pton(AF_INET, gateway.c_str(), &gateway_ip) != 1 ||
             inet_pton(AF_INET, mask.c_str(), &subnet_mask) != 1) {
+            spdlog::error("Invalid IP address format in routing table file: {}", line);
             throw std::runtime_error("Invalid IP address format in routing table file");
             }
 

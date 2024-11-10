@@ -33,7 +33,8 @@ BridgeClient::BridgeClient(std::filesystem::path routingTablePath, std::string p
     }
 
     auto bridgeSender = std::make_shared<BridgeSender>(client, con);
-    staticRouter = std::make_unique<StaticRouter>(routingTable, bridgeSender);
+    auto arpCache = std::make_unique<ArpCache>(std::chrono::seconds(15), bridgeSender, routingTable);
+    staticRouter = std::make_unique<StaticRouter>(std::move(arpCache), routingTable, bridgeSender);
 
     client->connect(con);
 }
