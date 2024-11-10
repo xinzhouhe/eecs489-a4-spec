@@ -6,6 +6,7 @@
 
 #include "RouterTypes.h"
 
+uint16_t cksum(const void *_data, int len);
 mac_addr make_mac_addr(void* addr);
 
 void print_addr_eth(uint8_t *addr);

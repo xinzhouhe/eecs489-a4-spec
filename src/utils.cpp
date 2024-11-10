@@ -3,6 +3,20 @@
 #include <spdlog/spdlog.h>
 #include "protocol.h"
 
+uint16_t cksum (const void *_data, int len) {
+  const uint8_t *data = static_cast<const uint8_t*>(_data);
+  uint32_t sum;
+
+  for (sum = 0;len >= 2; data += 2, len -= 2)
+    sum += data[0] << 8 | data[1];
+  if (len > 0)
+    sum += data[0] << 8;
+  while (sum > 0xffff)
+    sum = (sum >> 16) + (sum & 0xffff);
+  sum = htons (~sum);
+  return sum ? sum : 0xffff;
+}
+
 /* Converts a MAC address from void* to mac_addr */
 mac_addr make_mac_addr(void* addr) {
   mac_addr mac;
