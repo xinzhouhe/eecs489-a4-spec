@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <spdlog/spdlog.h>
+
 #include "protocol.h"
 
 uint16_t cksum (const void *_data, int len) {

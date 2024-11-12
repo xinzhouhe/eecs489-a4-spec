@@ -1,8 +1,6 @@
 #ifndef PACKETSENDER_H
 #define PACKETSENDER_H
 
-#include <string>
-
 #include "RouterTypes.h"
 
 class IPacketSender {

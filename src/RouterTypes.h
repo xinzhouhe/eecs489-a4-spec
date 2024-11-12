@@ -2,8 +2,6 @@
 #define ROUTERTYPES_H
 
 #include <chrono>
-#include <iomanip>
-#include <iostream>
 #include <vector>
 #include <array>
 

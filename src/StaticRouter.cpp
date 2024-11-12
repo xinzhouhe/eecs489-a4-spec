@@ -1,10 +1,10 @@
 #include "StaticRouter.h"
-#include "protocol.h"
-#include "IPacketSender.h"
-#include "utils.h"
+
 #include <spdlog/spdlog.h>
 #include <cstring>
 
+#include "protocol.h"
+#include "IPacketSender.h"
 #include "utils.h"
 
 StaticRouter::StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<RoutingTable> routingTable, std::shared_ptr<IPacketSender> packetSender)
