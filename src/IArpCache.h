@@ -1,5 +1,8 @@
 #ifndef IARPCACHE_H
 #define IARPCACHE_H
+#include <list>
+#include <string>
+
 #include "IPacketSender.h"
 #include "RoutingTable.h"
 
@@ -26,6 +29,7 @@ struct ArpRequest
 };
 
 class IArpCache {
+public:
     virtual ~IArpCache() = default;
 
     /**

@@ -17,7 +17,7 @@
 #include "RouterTypes.h"
 #include "RoutingTable.h"
 
-class ArpCache : IArpCache {
+class ArpCache : public IArpCache {
 public:
     ArpCache(std::chrono::milliseconds timeout,
         std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<RoutingTable> routingTable);

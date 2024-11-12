@@ -7,7 +7,7 @@
 
 #include "utils.h"
 
-StaticRouter::StaticRouter(std::unique_ptr<ArpCache> arpCache, std::shared_ptr<RoutingTable> routingTable, std::shared_ptr<IPacketSender> packetSender)
+StaticRouter::StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<RoutingTable> routingTable, std::shared_ptr<IPacketSender> packetSender)
 : routingTable(routingTable)
 , packetSender(packetSender)
 , arpCache(std::move(arpCache))

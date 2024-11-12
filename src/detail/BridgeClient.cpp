@@ -3,6 +3,7 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
+#include "ArpCache.h"
 #include "BridgeSender.h"
 #include "utils.h"
 

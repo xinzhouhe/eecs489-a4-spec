@@ -2,12 +2,13 @@
 #define STATICROUTER_H
 #include <vector>
 
-#include "ArpCache.h"
+#include "IArpCache.h"
 
 
 class StaticRouter {
 public:
-    StaticRouter(std::unique_ptr<ArpCache> arpCache, std::shared_ptr<RoutingTable> routingTable, std::shared_ptr<IPacketSender> packetSender);
+    StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<RoutingTable> routingTable,
+                 std::shared_ptr<IPacketSender> packetSender);
 
     /**
      * @brief Handles an incoming packet, telling the switch to send out the necessary packets.
@@ -22,9 +23,8 @@ private:
     std::shared_ptr<RoutingTable> routingTable;
     std::shared_ptr<IPacketSender> packetSender;
 
-    std::unique_ptr<ArpCache> arpCache;
+    std::unique_ptr<IArpCache> arpCache;
 };
-
 
 
 #endif //STATICROUTER_H
