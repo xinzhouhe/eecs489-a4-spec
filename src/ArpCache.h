@@ -19,15 +19,16 @@ class ArpCache : public IArpCache {
 public:
     ArpCache(std::chrono::milliseconds timeout,
         std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<RoutingTable> routingTable);
-    ~ArpCache();
+
+    ~ArpCache() override;
 
     void loop();
 
-    void addEntry(uint32_t ip, const mac_addr& mac);
+    void addEntry(uint32_t ip, const mac_addr& mac) override;
 
-    std::optional<mac_addr> getEntry(uint32_t ip);
+    std::optional<mac_addr> getEntry(uint32_t ip) override;
 
-    void queuePacket(uint32_t ip, const Packet& packet, const std::string& iface);
+    void queuePacket(uint32_t ip, const Packet& packet, const std::string& iface) override;
 
 private:
     void tick();
