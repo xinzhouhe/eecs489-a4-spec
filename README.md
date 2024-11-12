@@ -263,7 +263,7 @@ The routing table in code is read on from a file (default filename `rtable`, can
 You must implement most of the functions in `ArpCache.cpp`. The ARP cache is a simple cache that maps IP addresses to MAC addresses. The cache is used to store ARP replies and is used to fill out the destination MAC address of the Ethernet frame when forwarding packets. The cache also times out entries after a given amount of time.
 
 #### Protocol Headers (`protocol.h`)
-Within the router framework you will be dealing directly with raw Ethernet packets. The stub code itself provides some data structures in `sr_protocols.h` which you may use to manipulate headers easily. There are a number of resources which describe the protocol headers in detail. RFC Editor provides the specifications of the packet formats you'll be dealing with:
+Within the router framework you will be dealing directly with raw Ethernet packets. The stub code itself provides some data structures in `protocols.h` which you may use to manipulate headers easily. There are a number of resources which describe the protocol headers in detail. RFC Editor provides the specifications of the packet formats you'll be dealing with:
 
 * [Ethernet and ARP](https://www.rfc-editor.org/rfc/rfc826.html)
 * [IP](https://www.rfc-editor.org/rfc/rfc791)
@@ -299,7 +299,12 @@ In summary, your solution:
 
 <a name="debugging"></a>
 ## How to Debug
-Because your error might be due to some tiny, low-level mistake, trying to read through pages and pages of output is a waste of time. While logging is of course useful, you will be able to debug your code much faster if you also log packets and use `gdb`.
+
+Because your error might be due to some tiny, low-level mistake, trying to read through pages and pages of output is a waste of time. While logging is of course useful, you will be able to debug your code much faster if you also log packets and use a debugger.
+
+We highly encourage you to take advantage of the fact the project uses CMake. There are various tools for IDEs that make it very easy to compile, run, and debug your code. 
+- For Visual Studio Code, you can use the CMake Tools extension to build and debug your code. 
+- For CLion, the IDE comes with native support for CMake projects so you can run and debug your code with a single click.
 
 When logging, we encourage you to use `spdlog` to log messages at the correct level. This will allow you to filter out messages that are not relevant to your current debugging task.
 
@@ -334,10 +339,11 @@ Submission to the autograder will be done [here](https://g489.eecs.umich.edu/). 
 
 This assignment follows more of a fill-in-the-blank format than the first three, meaning we provide code skeleton that you fill in. Therefore,
 
-The submission may include any files that you have modified or added. However, you must NOT modify any of the following files:
-- `detail/*`
-- `main.cpp`
-- `PacketSender.h`
+The submission may include any files that you have modified or added. However, **you must ensure that:**
+- The `IPacketSender.h` file is not modified.
+- The `IArpCache.h` file is not modified.
+- The `IRoutingTable.h` file is not modified.
+- The signatures of `StaticRouter`'s constructor and `handlePacket` function are not modified.
 
 <a name="important-notes"></a>
 
