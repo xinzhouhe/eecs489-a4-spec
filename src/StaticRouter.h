@@ -1,6 +1,7 @@
 #ifndef STATICROUTER_H
 #define STATICROUTER_H
 #include <vector>
+#include <memory>
 #include <mutex>
 
 #include "IArpCache.h"

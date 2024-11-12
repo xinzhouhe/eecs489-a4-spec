@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <thread>
 #include <optional>
+#include <memory>
 #include <mutex>
 
 #include "IArpCache.h"
