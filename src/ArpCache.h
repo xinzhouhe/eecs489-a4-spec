@@ -12,33 +12,12 @@
 #include <mutex>
 #include <chrono>
 
-#include "PacketSender.h"
+#include "IArpCache.h"
+#include "IPacketSender.h"
 #include "RouterTypes.h"
 #include "RoutingTable.h"
 
-struct ArpEntry
-{
-    uint32_t ip;
-    mac_addr mac;
-    std::chrono::time_point<std::chrono::steady_clock> timeAdded;
-};
-
-struct AwaitingPacket
-{
-    Packet packet;
-    std::string iface;
-};
-
-struct ArpRequest
-{
-    uint32_t ip;
-    std::chrono::time_point<std::chrono::steady_clock> lastSent;
-    uint32_t timesSent;
-
-    std::list<AwaitingPacket> awaitingPackets;
-};
-
-class ArpCache {
+class ArpCache : IArpCache {
 public:
     ArpCache(std::chrono::milliseconds timeout,
         std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<RoutingTable> routingTable);

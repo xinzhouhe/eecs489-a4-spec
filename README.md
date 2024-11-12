@@ -239,10 +239,19 @@ Packets destined elsewhere should be forwarded using your normal forwarding logi
 ## Code Overview
 
 ### Classes
-**Note:** You can and should modify the provided classes as you need (please don't try to write all your code in the `handlePacket` function for the `StaticRouter`). You are even free to modify/delete all of the starter code. The only requirement is that the `StaticRouter` constructor and the `StaticRouter::handlePacket` signatures remain the same and that they are declared in `StaticRouter.h`. You may also **not** make modifications to the CMakelists.txt file.
+**Note:** You can and should modify the provided classes as you need (please don't try to write all your code in the `handlePacket` function for the `StaticRouter`). You are even free to modify/delete all of the starter code.
+
+The only requirements are that:
+- The `IPacketSender.h` file is not modified.
+- The `IArpCache.h` file is not modified.
+- The signatures of `StaticRouter`'s constructor and `handlePacket` function are not modified.
+
+You may find it helpful to look at the `IArpCache.h` and `RoutingTable.h` classes to understand the different structures and functions you will be working with.
 
 #### The Router (`StaticRouter.h/cpp`)
 You must implement the forwarding logic in `StaticRouter.cpp`. The router is a simple router that forwards packets based on a static routing table. The router will receive raw Ethernet frames and process the packets just like a real router, then forward them to the correct outgoing interface.
+
+The router takes in a class that implements the `PacketSender` interface. This interface exposes a `sendPacket` function that allows you to tell the switch to send a packet out of a specific interface. The router will use this interface to send packets out of an interface.
 
 #### The Routing Table (`RoutingTable.h/cpp`)
 You must implement the longest prefix match algorithm in `RoutingTable.cpp`.

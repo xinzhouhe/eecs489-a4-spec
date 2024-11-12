@@ -1,6 +1,6 @@
 #include "StaticRouter.h"
 #include "protocol.h"
-#include "PacketSender.h"
+#include "IPacketSender.h"
 #include "utils.h"
 #include <spdlog/spdlog.h>
 #include <cstring>
