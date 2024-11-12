@@ -2,8 +2,8 @@
 #define IARPCACHE_H
 #include <list>
 #include <string>
+#include <optional>
 
-#include "IPacketSender.h"
 #include "RoutingTable.h"
 
 struct ArpEntry

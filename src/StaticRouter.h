@@ -1,8 +1,10 @@
 #ifndef STATICROUTER_H
 #define STATICROUTER_H
 #include <vector>
+#include <mutex>
 
 #include "IArpCache.h"
+#include "IPacketSender.h"
 
 
 class StaticRouter {

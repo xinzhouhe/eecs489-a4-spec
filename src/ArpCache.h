@@ -4,13 +4,11 @@
 #include <vector>
 #include <array>
 #include <chrono>
-#include <list>
 #include <set>
 #include <unordered_map>
 #include <thread>
 #include <optional>
 #include <mutex>
-#include <chrono>
 
 #include "IArpCache.h"
 #include "IPacketSender.h"
