@@ -46,24 +46,53 @@ For this assignment, you can write all of your code locally (although we will st
 You can also choose to develop on the provided AWS image.
 
 #### Local Setup Only
-If you choose to develop locally, make sure you have CMake and Boost installed. If not, install it. On a Mac, you should use Homebrew and run
+
+If you're developing on the provided AWS image, you can skip to "Setting Up the Starter Code".
+
+If you choose to develop locally, you must have CMake, Boost, and Protocol Buffers installed.
+
+If you are on a Mac, this is very easy. Simply use Homebrew and run
 ```bash
-brew install cmake boost
+brew install cmake boost protobuf
+```
+and you're done and ready to skip to "Setting Up the Starter Code".
+
+On Windows or Linux, installing CMake and Boost are also relatively simple. On Ubuntu / WSL, you can run
+```bash
+sudo apt-get install cmake libboost-all-dev
+```
+However, for Protocol Buffers, you will need to build it from source. The following instructions will guide you through the process.
+
+First, run the following command to clone the Protocol Buffers repository:
+```bash
+git clone https://github.com/protocolbuffers/protobuf.git
 ```
 
-Additionally, this assignment **requires** that you have Protocol Buffers installed. Protocol Buffers is a serialization format that we use to communicate between the Mininet switch and the router. If you are on Mac, you can install it using Homebrew:
+Then, `cd` into the repository by running:
 ```bash
-brew install protobuf
+cd protobuf
 ```
 
-For Windows, you can use `vcpkg` to install it easily. On Linux you have to compile from source, which is more involved.
-
-You can find instructions for Windows and Linux [here](https://github.com/protocolbuffers/protobuf/blob/main/src/README.md).
-
-Finally, make sure you have the `venv` Python package installed. You can install it using `pip`:
+Next, check out a release version of Protocol Buffers by running:
 ```bash
-pip install venv
+git checkout tags/v28.3
 ```
+
+Then, run the following commands in succession to build and install Protocol Buffers:
+```bash
+$ git submodule update --init --recursive
+$ mkdir cmake/build
+$ cd cmake/build
+$ cmake -Dprotobuf_BUILD_TESTS=OFF ../..
+$ make -j 8
+$ sudo make install
+```
+
+It may take a while to build Protocol Buffers after running the `make` command. Once it is done, you should be able to run `protoc --version` and see the version of Protocol Buffers you just installed.
+
+**Note:** The above command will install Protocol Buffers globally on your system, making it difficult to uninstall. If you want to install it locally, you can run `cmake` with the `-DCMAKE_INSTALL_PREFIX` flag, and set the corresponding `-DProtobuf_DIR` flag when building the starter code or [use a CMake preset with cache variables](https://mcuoneclipse.com/2023/12/03/building-with-cmake-presets/) when building your project. 
+
+Finally, make sure you have `venv` installed (it is usually pre-installed on most Python distributions). If not, use Google to find out how to install it for your specific OS.
 
 ### Setting Up the Starter Code
 First, download the starter code. Then, run `setup.sh` to set up the environment. This script will create the Protocol Buffers files and create a virtual environment for Python that other scripts will use.
