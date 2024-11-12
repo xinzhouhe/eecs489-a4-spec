@@ -8,7 +8,7 @@
 #include "utils.h"
 
 
-ArpCache::ArpCache(std::chrono::milliseconds timeout, std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<RoutingTable> routingTable)
+ArpCache::ArpCache(std::chrono::milliseconds timeout, std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<IRoutingTable> routingTable)
 : timeout(timeout)
 , packetSender(std::move(packetSender))
 , routingTable(std::move(routingTable)) {

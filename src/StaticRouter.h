@@ -5,11 +5,12 @@
 
 #include "IArpCache.h"
 #include "IPacketSender.h"
+#include "IRoutingTable.h"
 
 
 class StaticRouter {
 public:
-    StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<RoutingTable> routingTable,
+    StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<IRoutingTable> routingTable,
                  std::shared_ptr<IPacketSender> packetSender);
 
     /**
@@ -22,7 +23,7 @@ public:
 private:
     std::mutex mutex;
 
-    std::shared_ptr<RoutingTable> routingTable;
+    std::shared_ptr<IRoutingTable> routingTable;
     std::shared_ptr<IPacketSender> packetSender;
 
     std::unique_ptr<IArpCache> arpCache;

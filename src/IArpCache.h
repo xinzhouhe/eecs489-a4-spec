@@ -4,7 +4,7 @@
 #include <string>
 #include <optional>
 
-#include "RoutingTable.h"
+#include "RouterTypes.h"
 
 struct ArpEntry
 {

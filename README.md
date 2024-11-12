@@ -244,6 +244,7 @@ Packets destined elsewhere should be forwarded using your normal forwarding logi
 The only requirements are that:
 - The `IPacketSender.h` file is not modified.
 - The `IArpCache.h` file is not modified.
+- The `IRoutingTable.h` file is not modified.
 - The signatures of `StaticRouter`'s constructor and `handlePacket` function are not modified.
 
 You may find it helpful to look at the `IArpCache.h` and `RoutingTable.h` classes to understand the different structures and functions you will be working with.

@@ -13,12 +13,12 @@
 #include "IArpCache.h"
 #include "IPacketSender.h"
 #include "RouterTypes.h"
-#include "RoutingTable.h"
+#include "IRoutingTable.h"
 
 class ArpCache : public IArpCache {
 public:
     ArpCache(std::chrono::milliseconds timeout,
-        std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<RoutingTable> routingTable);
+        std::shared_ptr<IPacketSender> packetSender, std::shared_ptr<IRoutingTable> routingTable);
 
     ~ArpCache() override;
 
@@ -40,7 +40,7 @@ private:
     std::atomic<bool> shutdown = false;
 
     std::shared_ptr<IPacketSender> packetSender;
-    std::shared_ptr<RoutingTable> routingTable;
+    std::shared_ptr<IRoutingTable> routingTable;
 
     std::unordered_map<ip_addr, ArpEntry> entries;
     std::unordered_map<ip_addr, ArpRequest> requests;
