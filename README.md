@@ -218,7 +218,7 @@ Some ICMP messages may come from the source address of any of the router interfa
 #### Address Resolution Protocol
 ARP is needed to determine the next-hop MAC address that corresponds to the next-hop IP address stored in the routing table. Without the ability to generate an ARP request and process ARP replies, your router would not be able to fill out the destination MAC address field of the raw Ethernet frame you are sending over the outgoing interface. Analogously, without the ability to process ARP requests and generate ARP replies, no other router could send your router Ethernet frames. Therefore, your router must generate and process ARP requests and replies.
 
-To lessen the number of ARP requests sent out, you are required to cache ARP replies. Cache entries should time out after 15 seconds to minimize staleness. The provided ARP cache class already times the entries out for you.
+To lessen the number of ARP requests sent out, you are required to cache ARP replies. Cache entries should time out after a given amount of time to minimize staleness. The provided ARP cache class already times the entries out for you.
 
 When forwarding a packet to a next-hop IP address, the router should first check the ARP cache for the corresponding MAC address before sending an ARP request. In the case of a cache miss, an ARP request should be sent to a target IP address about once every second until a reply comes in. If the ARP request is sent seven times with no reply, an ICMP destination host unreachable is sent back to the source IP as stated above. The provided ARP request queue will help you manage the request queue.
 
@@ -259,7 +259,7 @@ You must implement the longest prefix match algorithm in `RoutingTable.cpp`.
 The routing table in code is read on from a file (default filename `rtable`, can be set with command line option `-r`). The routing table allows you to look up the information of a interface, and also the next hop IP address and interface for a given destination IP address.
 
 #### The ARP Cache and ARP Request Queue (`ArpCache.h/cpp`)
-You must implement most of the functions in `ArpCache.cpp`. The ARP cache is a simple cache that maps IP addresses to MAC addresses. The cache is used to store ARP replies and is used to fill out the destination MAC address of the Ethernet frame when forwarding packets. The cache also times out entries after 15 seconds.
+You must implement most of the functions in `ArpCache.cpp`. The ARP cache is a simple cache that maps IP addresses to MAC addresses. The cache is used to store ARP replies and is used to fill out the destination MAC address of the Ethernet frame when forwarding packets. The cache also times out entries after a given amount of time.
 
 #### Protocol Headers (`protocol.h`)
 Within the router framework you will be dealing directly with raw Ethernet packets. The stub code itself provides some data structures in `sr_protocols.h` which you may use to manipulate headers easily. There are a number of resources which describe the protocol headers in detail. RFC Editor provides the specifications of the packet formats you'll be dealing with:
@@ -291,7 +291,7 @@ In summary, your solution:
     * It MUST forward packets using the forwarding table, selecting an entry with the longest prefix match algorithm.
     * Note that an Ethernet frame payload may be larger than the encapsulated IP packet. That is, there may be some padding bytes after the IP packet. This can occur when an Ethernet interface tries to align frames on 4-byte boundaries.
 6. MUST correctly handle `traceroutes` through it (where it is not the end host) and to it (where it is the end host).
-7. MUST maintain an ARP cache whose entries are invalidated after a timeout period (timeouts should be on the order of 15 seconds).
+7. MUST maintain an ARP cache whose entries are invalidated after a timeout period (the timeout duration is provided to the ARP Cache when it is created).
 8. MUST NOT drop a packet unless there is no matching forwarding table entry, the router cannot determine the next hop link address, or cannot parse the packet.
 9. MUST queue all packets waiting for outstanding ARP replies.
 10. SHOULD drop a packet waiting for an ARP reply after 7 failed requests for a reply since receiving the packet.
