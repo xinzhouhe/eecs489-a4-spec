@@ -38,70 +38,90 @@ After completing this programming assignment, students should be able to:
 * Explain how layer 2 and 3 protocols such as ARP and ICMP work
 
 <a name="getting-started"></a>
-## Getting Started
+## Getting Set Up
 
-### Virtual Machine
-Your assignment will run in a virtual machine. The password is the same as the username for this VM. A version compatible with VMWare can be downloaded [here](https://drive.google.com/file/d/1-2Nq4TKMc4VMrN-pAKkUc9aRAfwnIgXj/view).
+### Prerequisites
+For this assignment, you can write all of your code locally (although we will still be using a remote machine to run Mininet and forward the traffic to your local computer.)
 
-This VM is different from the ones used for the first three assignments. It contains extra configuration files necessary to complete the project.
+You can also choose to develop on the provided AWS image.
 
-**You can follow these steps to create a shared folder.**
-1. Go to “Virtual Machine Settings” and enable the shared folder feature.
-2. Add a shared folder.
-3. The shared folder should appear under /mnt/hgfs
-Note: if you cannot find the shared folder in the guest os, run the following command in the terminal of the guest:
+#### Local Setup Only
+
+If you're developing on the provided AWS image, you can skip to "Setting Up the Starter Code".
+
+If you choose to develop locally, you must have CMake, Boost, and Protocol Buffers installed.
+
+If you are on a Mac, this is very easy. Simply use Homebrew and run
 ```bash
-# list the shared folders
-vmware-hgfsclient
-# mount all shared folders under /mnt/hgfs
-sudo vmhgfs-fuse .host:/ /mnt/hgfs -o subtype=vmhgfs-fuse,allow_other
+brew install cmake boost protobuf
 ```
+and you're done and ready to skip to "Setting Up the Starter Code".
 
-If you encounter
-
-```
-vmhgfs-fuse: command not found
-```
-Try to do the following in the VM
-```
-git clone https://github.com/rasa/vmware-tools-patches.git
-cd vmware-tools-patches
-sudo ./patched-open-vm-tools.sh
-```
-You may need to install dpkg-dev
-```
-sudo apt install dpkg-dev
-```
-You may also need to install libdpkg-perl version 1.17.5ubuntu5 required by dpkg-dev
-```
-sudo apt install libdpkg-perl=1.17.5ubuntu5
-```
-
-**You can follow these steps to setup the internet.**
-1. Make sure your network adapter is in “NAT: Used to share the host’s IP address”.
-2. In the terminal of the guest, run:
+On Windows or Linux, installing CMake and Boost are also relatively simple. On Ubuntu / WSL, you can run
 ```bash
-ip link
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-2: ens33: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
-    link/ether 00:0c:29:a5:cd:b6 brd ff:ff:ff:ff:ff:ff
+sudo apt-get install cmake libboost-all-dev
+```
+However, for Protocol Buffers, you will need to build it from source. The following instructions will guide you through the process.
 
-# Your interface might not be ens33, you should use the name given above
-
-sudo ip link set ens33 up
-
-sudo dhclient ens33 -v
+First, run the following command to clone the Protocol Buffers repository:
+```bash
+git clone https://github.com/protocolbuffers/protobuf.git
 ```
 
-You may install tools that suit your workflow. **But DO NOT update the software in the VM.** 
-You can find a guide on [how to troubleshoot the VM here](https://eecs388.org/vmguide.html#troubleshooting)
+Then, `cd` into the repository by running:
+```bash
+cd protobuf
+```
 
-### Starter Code
+Next, check out a release version of Protocol Buffers by running:
+```bash
+git checkout tags/v28.3
+```
 
-The starter code can be found in your VM at `$HOME/p4_starter_code/router/`
+Then, run the following commands in succession to build and install Protocol Buffers:
+```bash
+$ git submodule update --init --recursive
+$ mkdir cmake/build
+$ cd cmake/build
+$ cmake -Dprotobuf_BUILD_TESTS=OFF ../..
+$ make -j 8
+$ sudo make install
+```
 
-Your router table can be found in the `rtable` file in the same directory.
+It may take a while to build Protocol Buffers after running the `make` command. Once it is done, you should be able to run `protoc --version` and see the version of Protocol Buffers you just installed.
+
+**Note:** The above command will install Protocol Buffers globally on your system, making it difficult to uninstall. If you want to install it locally, you can run `cmake` with the `-DCMAKE_INSTALL_PREFIX` flag, and set the corresponding `-DProtobuf_DIR` flag when building the starter code or [use a CMake preset with cache variables](https://mcuoneclipse.com/2023/12/03/building-with-cmake-presets/) when building your project. 
+
+Finally, make sure you have `venv` installed (it is usually pre-installed on most Python distributions). If not, use Google to find out how to install it for your specific OS.
+
+### Setting Up the Starter Code
+First, download the starter code. Then, run `setup.sh` to set up the environment. This script will create the Protocol Buffers files and create a virtual environment for Python that other scripts will use.
+
+### Running the Starter Code
+
+The provided code contains three parts:
+#### Static Router
+
+This is the only part of the code that you will be writing. It is a simple router that forwards packets based on a static routing table. More on this later.
+
+#### POX Controller
+
+The POX controller allows the Mininet switch to communicate with the router. The flow-chart of communication looks like this:
+
+```aiignore
+Mininet Host --> Mininet Switch: "Hey, I have this packet for you."
+Mininet Switch --> POX Controller: "Hey, this packet just came in, what should I do with it?"
+POX Controller --> Router: "Hey, this packet just came in. Let me know if I should send out any packets soon, and if so, out of which interface."
+Router --> POX Controller: "Send out this packet out of this interface."
+POX Controller --> Mininet Switch: "Send out this packet out of this interface."
+Mininet Switch --> Another Mininet Host: "I have this packet for you."
+```
+
+#### Mininet Topology
+
+The Mininet topology is a simple network with three hosts and a switch. The hosts are `router`, `server1`, and `server2`. The switch is a simple switch that forwards packets out of the given interface.
+
+## The Router
 
 ### Understanding a Routing Table File
 Each line in the routing table (rtable) file is a routing entry and has the following format:
@@ -126,14 +146,37 @@ You should now have all the pieces needed to build and run the router:
 
 You can build and run the starter code as follows:
 
-```
-make
-./sr
+```bash
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
 ```
 
-Mininet and POX need to be started for SR (static router) to run. From the `$HOME/p4_starter_code` directory, you need to first run `sudo ./run_mininet.sh`. Then, open a separate terminal and run `sudo ./run_pox.sh`.
+You can then run the router with the following command:
 
-By default, SR looks for `auth_key` from the current working directory, so make sure that file exists in the directory you are running SR. You can copy one from `$HOME/p4_starter_code/router/auth_key`.
+```bash
+$ ./StaticRouter -r ../rtable
+```
+
+Mininet and POX need to be started for SR (static router) to run.
+
+To run POX, run
+```bash
+$ ./run_pox.sh
+```
+
+You **must** run Mininet on the AWS remote host.
+
+First, forward the Mininet port to your local machine:
+```bash
+$ ssh -i <your-key.pem> -R 6633:localhost:6633 ubuntu@<your-aws-ip>
+```
+
+Then, run Mininet:
+```bash
+$ ./run_mininet.sh
+````
 
 By default, SR looks for `rtable` from the current working directory. This can be overridden by the `-r` option.
 
@@ -175,7 +218,7 @@ Some ICMP messages may come from the source address of any of the router interfa
 #### Address Resolution Protocol
 ARP is needed to determine the next-hop MAC address that corresponds to the next-hop IP address stored in the routing table. Without the ability to generate an ARP request and process ARP replies, your router would not be able to fill out the destination MAC address field of the raw Ethernet frame you are sending over the outgoing interface. Analogously, without the ability to process ARP requests and generate ARP replies, no other router could send your router Ethernet frames. Therefore, your router must generate and process ARP requests and replies.
 
-To lessen the number of ARP requests sent out, you are required to cache ARP replies. Cache entries should time out after 15 seconds to minimize staleness. The provided ARP cache class already times the entries out for you.
+To lessen the number of ARP requests sent out, you are required to cache ARP replies. Cache entries should time out after a given amount of time to minimize staleness. The provided ARP cache class already times the entries out for you.
 
 When forwarding a packet to a next-hop IP address, the router should first check the ARP cache for the corresponding MAC address before sending an ARP request. In the case of a cache miss, an ARP request should be sent to a target IP address about once every second until a reply comes in. If the ARP request is sent seven times with no reply, an ICMP destination host unreachable is sent back to the source IP as stated above. The provided ARP request queue will help you manage the request queue.
 
@@ -195,34 +238,31 @@ Packets destined elsewhere should be forwarded using your normal forwarding logi
 <a name="code-overview"></a>
 ## Code Overview
 
-### Basic Functions
-Your router receives and sends Ethernet frames. The basic functions to handle these functions are:
+### Classes
+**Note:** You can and should modify the provided classes as you need (please don't try to write all your code in the `handlePacket` function for the `StaticRouter`). You are even free to modify/delete all of the starter code.
 
-* `sr_handlepacket(struct sr_instance* sr, uint8_t *packet, unsigned int len, char* interface)`
-This method, located in `sr_router.c`, is called by the router each time a packet is received. The `packet` argument points to the packet buffer which contains the full packet including the Ethernet header. The name of the receiving `interface` is passed into the method as well.
+The only requirements are that:
+- The `IPacketSender.h` file is not modified.
+- The `IArpCache.h` file is not modified.
+- The `IRoutingTable.h` file is not modified.
+- The signatures of `StaticRouter`'s constructor and `handlePacket` function are not modified.
 
-* `sr_send_packet(struct sr_instance* sr, uint8_t* buf, unsigned int len, const char* iface)`
-This method, located in `sr_vns_comm.c`, will send `len` bytes of `buf` out of the interface specified by `iface`. The `buf` parameter should point to a valid Ethernet frame, and `len` should not go past the end of the frame.
-You should not free the buffer given to you in `sr_handlepacket()` (this is why you can think of the buffer as being "lent" to you). You are responsible for doing correct memory management on the buffers that `sr_send_packet` borrows from you (that is, `sr_send_packet` will not call `free()` on the buffers that you pass it).
+You may find it helpful to look at the `IArpCache.h` and `RoutingTable.h` classes to understand the different structures and functions you will be working with.
 
-* `sr_arpcache_sweepreqs(struct sr_instance *sr)`
-The assignment requires you to send an ARP request about once a second until a reply comes back or you have sent seven requests. This function is defined in `sr_arpcache.c` and called every second, and you should add code that iterates through the ARP request queue and re-sends any outstanding ARP requests that haven't been sent in the past second. If an ARP request has been sent 7 times with no response, a destination host unreachable should go back to all the sender of packets that were waiting on a reply to this ARP request.
+#### The Router (`StaticRouter.h/cpp`)
+You must implement the forwarding logic in `StaticRouter.cpp`. The router is a simple router that forwards packets based on a static routing table. The router will receive raw Ethernet frames and process the packets just like a real router, then forward them to the correct outgoing interface.
 
-### Data Structures
+The router takes in a class that implements the `PacketSender` interface. This interface exposes a `sendPacket` function that allows you to tell the switch to send a packet out of a specific interface. The router will use this interface to send packets out of an interface.
 
-#### The Router (`sr_router.h`)
-The full context of the router is housed in the struct `sr_instance` (`sr_router.h`). `sr_instance` contains information about topology the router is routing for as well as the routing table and the list of interfaces.
+#### The Routing Table (`RoutingTable.h/cpp`)
+You must implement the longest prefix match algorithm in `RoutingTable.cpp`.
 
-#### Interfaces (`sr_if.c/h`)
-After connecting, the server will send the client the hardware information for that host. The stub code uses this to create a linked list of interfaces in the router instance at member `if_list`. Utility methods for handling the interface list can be found at `sr_if.c/h`.
+The routing table in code is read on from a file (default filename `rtable`, can be set with command line option `-r`). The routing table allows you to look up the information of a interface, and also the next hop IP address and interface for a given destination IP address.
 
-#### The Routing Table (`sr_rt.c/h`)
-The routing table in the stub code is read on from a file (default filename `rtable`, can be set with command line option `-r`) and stored in a linked list of routing entries in the current routing instance (the member name is `routing_table`).
+#### The ARP Cache and ARP Request Queue (`ArpCache.h/cpp`)
+You must implement most of the functions in `ArpCache.cpp`. The ARP cache is a simple cache that maps IP addresses to MAC addresses. The cache is used to store ARP replies and is used to fill out the destination MAC address of the Ethernet frame when forwarding packets. The cache also times out entries after a given amount of time.
 
-#### The ARP Cache and ARP Request Queue (`sr_arpcache.c/h`)
-You will need to add ARP requests and packets waiting on responses to those ARP requests to the ARP request queue. When an ARP response arrives, you will have to remove the ARP request from the queue and place it onto the ARP cache, forwarding any packets that were waiting on that ARP request. Pseudocode for these operations is provided in `sr_arpcache.h`. The base code already creates a thread that times out ARP cache entries 15 seconds after they are added for you. You must fill out the `sr_arpcache_sweepreqs()` function in `sr_arpcache.c` that gets called every second to iterate through the ARP request queue and re-send ARP requests if necessary. Psuedocode for this is provided in `sr_arpcache.h`.
-
-#### Protocol Headers (`sr_protocol.h`)
+#### Protocol Headers (`protocol.h`)
 Within the router framework you will be dealing directly with raw Ethernet packets. The stub code itself provides some data structures in `sr_protocols.h` which you may use to manipulate headers easily. There are a number of resources which describe the protocol headers in detail. RFC Editor provides the specifications of the packet formats you'll be dealing with:
 
 * [Ethernet and ARP](https://www.rfc-editor.org/rfc/rfc826.html)
@@ -252,98 +292,54 @@ In summary, your solution:
     * It MUST forward packets using the forwarding table, selecting an entry with the longest prefix match algorithm.
     * Note that an Ethernet frame payload may be larger than the encapsulated IP packet. That is, there may be some padding bytes after the IP packet. This can occur when an Ethernet interface tries to align frames on 4-byte boundaries.
 6. MUST correctly handle `traceroutes` through it (where it is not the end host) and to it (where it is the end host).
-7. MUST maintain an ARP cache whose entries are invalidated after a timeout period (timeouts should be on the order of 15 seconds).
+7. MUST maintain an ARP cache whose entries are invalidated after a timeout period (the timeout duration is provided to the ARP Cache when it is created).
 8. MUST NOT drop a packet unless there is no matching forwarding table entry, the router cannot determine the next hop link address, or cannot parse the packet.
 9. MUST queue all packets waiting for outstanding ARP replies.
 10. SHOULD drop a packet waiting for an ARP reply after 7 failed requests for a reply since receiving the packet.
 
 <a name="debugging"></a>
 ## How to Debug
-Because your error might be due to some tiny, low-level mistake, trying to read through pages and pages of `printf()` output is a waste of time. While `printf()` is of course useful, you will be able to debug your code much faster if you also log packets and use `gdb`.
+Because your error might be due to some tiny, low-level mistake, trying to read through pages and pages of output is a waste of time. While logging is of course useful, you will be able to debug your code much faster if you also log packets and use `gdb`.
+
+When logging, we encourage you to use `spdlog` to log messages at the correct level. This will allow you to filter out messages that are not relevant to your current debugging task.
+
+Examples of `spdlog` can be found in `utils.cpp`.
 
 ### Protocols: Logging Packets
 You can log the packets received and generated by your SR program by using the -l parameter. The file will be in `pcap` format, so you can use Wireshark or `tcpdump` to read it.
 
+For example,
 ```
-./sr -l logfile.pcap
+./StaticRouter -p my_prefix
 ```
+will output `my_prefix_input.pcap` and `my_prefix_output.pcap`.
 
 Besides SR, you can also use Mininet to monitor the traffic that goes in and out of the emulated nodes, i.e., `router`, `server1` and `server2`. Mininet provides direct access to each emulated node. Using server1 as an example, to see the packets in and out of it, go to the Mininet CLI:
 
 ```
 mininet> server1 sudo tcpdump -n -i server1-eth0
 ```
-
-Or you can bring up a terminal inside `server1` by
-
-```
-mininet> xterm server1
-```
-
-Then inside the newly popped xterm,
-
-```
-xterm# sudo tcpdump -n -i server1-eth0
-```
-
 ### Router
 #### Debugging Functions
-We have provided you with some basic debugging functions in `sr_utils.h`, `sr_utils.c`. Feel free to use them to print out network header information from your packets. Below are some functions you may find useful:
+We have provided you with some basic debugging functions in `utils.h`, `utils.c`. Feel free to use them to print out network header information from your packets. Below are some functions you may find useful:
 
 * `print_hdrs(uint8_t *buf, uint32_t length)`
-Prints out all possible headers starting from the Ethernet header in the packet.
+  Prints out all possible headers starting from the Ethernet header in the packet.
 * `print_addr_ip_int(uint32_t ip)`
-Prints out a formatted IP address from a `uint32_t`. Make sure you are passing the IP address in the correct byte ordering.
+  Prints out a formatted IP address from a `uint32_t`. Make sure you are passing the IP address in the correct byte ordering.
 
 <a name="submitting"></a>
 ## Submitting
-Submission to the autograder will be done [here](https://eecs489.eecs.umich.edu/). Submission policy will be announced when the autograder is released, which we anticipate being around halfway through the assignment.
-
-To submit:
-1. `git push` your work to the github repository we provided for the assignment. Feel free to start with the directory `${HOME}/p4_starter_code` as your git repository using `git init`. You can also copy, move, or rename this directory as well.
-2. Go to autograder website specified above. You can specify what branch on your repository you want us to grade.
-3. Press submit. Your results will show up on that page once grading is finished.
+Submission to the autograder will be done [here](https://g489.eecs.umich.edu/). Submission policy will be announced when the autograder is released, which we anticipate being around halfway through the assignment.
 
 This assignment follows more of a fill-in-the-blank format than the first three, meaning we provide code skeleton that you fill in. Therefore,
 
-Your git repository must include the following:
-* All the code for your router in a folder called `router`.
-* A `README` file with the names and umich uniqnames of the group members.
-* Please **DO NOT** submit or rely on any files other than the provided source code in the VM. All other files (including `Makefile`) will be ignored during the grading process.
-
+The submission may include any files that you have modified or added. However, you must NOT modify any of the following files:
+- `detail/*`
+- `main.cpp`
+- `PacketSender.h`
 
 <a name="important-notes"></a>
-## Important Notes
-
-### Which files should be modified?
-In order to implement the required features. You need to change the source code in the starter code folder. We provide a general guideline on how to change the files. See [RFC2119](https://www.ietf.org/rfc/rfc2119.txt) for interpreting this guideline.
-
-
-Files that **MUST** be changed:
-* `sr_arpcache.c/h`
-* `sr_router.c/h`
-
-Files that **MAY** be changed:
-* `sr_protocol.h`
-* `sr_utils.c/h` (This is where you implement utility functions)
-* `sr_rt.c/h`
-* `sr_if.c/h`
-
-Files that **MUST NOT** be changed:
-* `Makefile`
-* `sr_main.c`
-
-You **MUST NOT** add new source files, which will be ignored by the provided Makefile.
-You **MUST NOT** change the signature of provided functions.
-
-
-
-<a name="faq"></a>
-## FAQ
-* How long is this assignment?
-    In our reference solution, we added around 500 lines of C, including whitespace and comments. Of course, your solution may need fewer or more lines of code, but this gives you an idea a rough idea of the size of the assignment to a first approximation.
-* Can I have a reference implementation?
-    To help you debug your topologies and understand the required behavior we provide a reference binary and you can find it at `$HOME/p4_starter_code/sr_solution`.
 
 ## Acknowledgements
-This programming assignment is based on Stanford's lab 3 from CS 144: Introduction to Computer Networking.
+This programming assignment is based on Stanford's lab 3 from CS 144: Introduction to Computer Networking and translated into C++ by the University of Michigan's EECS 489 F24 staff.
