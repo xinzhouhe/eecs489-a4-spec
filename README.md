@@ -144,6 +144,12 @@ You should now have all the pieces needed to build and run the router:
 * A routing table file that corresponds to the routing table for the router node in that topology
 * The starter code
 
+You first want to ssh into the AWS remote host, forwarding the port for Mininet. You can do this by running the following command:
+
+```bash
+$ ssh -i <your-key.pem> -R 6633:localhost:6633 ubuntu@<your-aws-ip>
+```
+
 You can build and run the starter code as follows:
 
 ```bash
@@ -152,31 +158,25 @@ $ cd build
 $ cmake ..
 $ make
 ```
-
-You can then run the router with the following command:
-
-```bash
-$ ./StaticRouter -r ../rtable
-```
-
-Mininet and POX need to be started for SR (static router) to run.
-
-To run POX, run
+First, run POX:
 ```bash
 $ ./run_pox.sh
 ```
 
 You **must** run Mininet on the AWS remote host.
 
-First, forward the Mininet port to your local machine:
-```bash
-$ ssh -i <your-key.pem> -R 6633:localhost:6633 ubuntu@<your-aws-ip>
-```
-
-Then, run Mininet:
+On the AWS remote host, run the following command:
 ```bash
 $ ./run_mininet.sh
 ````
+
+Mininet and POX need to be started for SR (static router) to run.
+*Note: Mininet will connect to POX, so POX should be running first. However, it is okay if you need to restart POX while Mininet is running, as long as there is not a large amount of time where Mininet is running but POX is not.*
+
+Now, you can run the router:
+```bash
+$ ./StaticRouter -r ../rtable
+```
 
 By default, SR looks for `rtable` from the current working directory. This can be overridden by the `-r` option.
 
