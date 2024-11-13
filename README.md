@@ -10,14 +10,23 @@ Your task is to implement the forwarding logic so packets go to the correct inte
 
 This is not a simulation: your router *will* route real packets to HTTP servers sitting behind your router. When you have finished your router, you should be able to access these servers using regular client software (e.g., `wget/curl`). In addition, you should be able to `ping` and `traceroute` to and through a functioning Internet router. This is the topology you will be using for your development:
 
-<img src="diagram.png" title="topology" />
+<img src="p4-architecture.png" title="Project 4 Architecture" />
 
-You will use Mininet to set up these topologies of emulated routers and process packets in them. Once your router is functioning correctly, you will be able to perform all of the following operations:
+* The yellow parts (i.e. the static router, including implementations of the ARPCache and the RoutingTable classes) is the part that you will be writing. Your static router will control the logic of the Mininet switch. 
+* The blue parts are the topology implemented within Mininet, which includes a switch and three hosts (server1, server2, and the client). 
+* The POX controller just eases communication between Mininet and your code; you don't need to think about how it works. 
 
-* Ping any of the router's interfaces from the servers and from the VM.
-* Traceroute to any of the router's interface IP addresses.
-* Ping any of the HTTP servers from the VM (or from the other server).
-* Traceroute to any of the HTTP server IP addresses.
+**NOTE: From this point in the spec, we use *router* to refer to the static router that you will be writing, and *switch* to refer to the Mininet switch.** 
+
+> In general, the terms switch and router are used somewhat confusingly in a networking context. There is a [technical difference between them](https://www.cloudflare.com/learning/network-layer/what-is-a-network-switch/), but modern consumer routers often have built-in switches, so you will hear the two terms used interchangably outside this project.
+
+
+Once your router is functioning correctly, you will be able to perform all of the following operations:
+
+* Ping any of the switch's interfaces from the hosts.
+* Traceroute to any of the switch's interface IP addresses.
+* Ping any of the hosts from any other host.
+* Traceroute to any of the hosts from any other host.
 * Download a file using HTTP from one of the HTTP servers.
 
 Additional requirements are laid out in the "Requirements" section.
@@ -34,18 +43,25 @@ Additional requirements are laid out in the "Requirements" section.
 
 After completing this programming assignment, students should be able to:
 
-* Describe how routers work
-* Explain how layer 2 and 3 protocols such as ARP and ICMP work
+* Describe how routers work.
+* Explain how layer 2 and 3 protocols such as ARP and ICMP work.
 
 <a name="getting-started"></a>
 ## Getting Set Up
 
 ### Prerequisites
-For this assignment, you can write all of your code locally (although we will still be using a remote machine to run Mininet and forward the traffic to your local computer.)
+For this assignment, you can write all of your code locally (although we will still be using a remote machine to run Mininet and forward the traffic to your local computer). **This is the preferred option.**
 
-You can also choose to develop on the provided AWS image.
+You can also choose to develop on the provided AWS image. 
 
-#### Local Setup Only
+#### AWS Setup (For Everyone)
+You will find an AMI named TODO with AMI ID  TODO in your AWS account associated with this class, accessed through AWS Learner Lab. Please create a new EC2 instance using this AMI, similar to what you did in Projects 1 and 2. 
+
+Your instance type does not have to be particularly beefy; a `t2.medium` works perfectly fine, and even smaller will probably work as well. 
+
+Once you have this EC2 instance set up, please clone this repository within the machine.
+
+#### Local Setup (If Developing Locally)
 
 If you're developing on the provided AWS image, you can skip to "Setting Up the Starter Code".
 
@@ -94,8 +110,10 @@ It may take a while to build Protocol Buffers after running the `make` command. 
 
 Finally, make sure you have `venv` installed (it is usually pre-installed on most Python distributions). If not, use Google to find out how to install it for your specific OS.
 
-### Setting Up the Starter Code
-First, download the starter code. Then, run `setup.sh` to set up the environment. This script will create the Protocol Buffers files and create a virtual environment for Python that other scripts will use.
+### Setting Up the Starter Code 
+This section should be completed wherever you are planning on developing, whether locally or on AWS. 
+
+First, download the starter code by cloning this repository. Then, run `setup.sh` to set up the environment. This script will create the Protocol Buffers files and create a virtual environment for Python that other scripts will use.
 
 ### Running the Starter Code
 
@@ -111,15 +129,15 @@ The POX controller allows the Mininet switch to communicate with the router. The
 ```aiignore
 Mininet Host --> Mininet Switch: "Hey, I have this packet for you."
 Mininet Switch --> POX Controller: "Hey, this packet just came in, what should I do with it?"
-POX Controller --> Router: "Hey, this packet just came in. Let me know if I should send out any packets soon, and if so, out of which interface."
-Router --> POX Controller: "Send out this packet out of this interface."
+POX Controller --> Your Router: "Hey, this packet just came in. Let me know if I should send out any packets soon, and if so, out of which interface."
+Your Router --> POX Controller: "Send out this packet out of this interface."
 POX Controller --> Mininet Switch: "Send out this packet out of this interface."
 Mininet Switch --> Another Mininet Host: "I have this packet for you."
 ```
 
 #### Mininet Topology
 
-The Mininet topology is a simple network with three hosts and a switch. The hosts are `router`, `server1`, and `server2`. The switch is a simple switch that forwards packets out of the given interface.
+The Mininet topology is a simple network with three hosts and a switch. The hosts are `client`, `server1`, and `server2`. The switch is a simple switch that forwards packets out of the given interface.
 
 ## The Router
 
@@ -137,6 +155,7 @@ Here is the default routing table that you will find on the VM. The first entry 
 192.168.2.2   192.168.2.2  255.255.255.255  eth1
 172.64.3.10   172.64.3.10  255.255.255.255  eth2
 ```
+Note that your code should be able to handle any valid routing table, as we will test it with different topologies on the autograder. 
 
 ### Building and Running
 You should now have all the pieces needed to build and run the router:
@@ -150,6 +169,8 @@ You first want to ssh into the AWS remote host, forwarding the port for Mininet.
 $ ssh -i <your-key.pem> -R 6633:localhost:6633 ubuntu@<your-aws-ip>
 ```
 
+> 6633 is the default port used by POX for communication. Do not try to use a different port; this is not an arbitrary choice. 
+
 You can build and run the starter code as follows:
 
 ```bash
@@ -158,20 +179,19 @@ $ cd build
 $ cmake ..
 $ make
 ```
-First, run POX:
+First, run POX wherever you are developing your code:
 ```bash
 $ ./run_pox.sh
 ```
 
-You **must** run Mininet on the AWS remote host.
-
-On the AWS remote host, run the following command:
+**On the AWS remote host**, run the following command:
 ```bash
 $ ./run_mininet.sh
 ````
 
-Mininet and POX need to be started for SR (static router) to run.
-*Note: Mininet will connect to POX, so POX should be running first. However, it is okay if you need to restart POX while Mininet is running, as long as there is not a large amount of time where Mininet is running but POX is not.*
+Mininet and POX need to be started for your router to run.
+
+> Note: Mininet will connect to POX, so POX should be running first. However, it is okay if you need to restart POX while Mininet is running, as long as there is not a large amount of time where Mininet is running but POX is not.*
 
 Now, you can run the router:
 ```bash
@@ -182,9 +202,16 @@ By default, SR looks for `rtable` from the current working directory. This can b
 
 <a name="background"></a>
 ## Background: Routing
+> The term "router" in this section refers to both the Mininet switch and your router, as your router is an implementation detail of the switch to any Mininet hosts that interact with the switch. 
+
 This section has an outline of the forwarding logic for a router, although it does not contain all the details. There are two main parts to this assignment: IP forwarding and handling ARP.
 
-When an IP packet arrives at your router, it arrives inside an Ethernet frame. Your router needs to check if it is the final destination of the packet, and if not, forward it along the correct link based on its forwarding table. The forwarding table names the IP address of the next hop. The router must use ARP to learn the Ethernet address of the next hop IP address, so it can address the Ethernet frame correctly.
+When an IP packet arrives at the router, it arrives inside an Ethernet frame. Your router needs to check if it is the final destination of the packet, and if not, forward it along the correct link based on its forwarding table. The forwarding table names the IP address of the next hop. The router must use ARP to learn the Ethernet address of the next hop IP address, so it can address the Ethernet frame correctly.
+
+### A Note on IP Addresses
+Every interface on the Mininet switch (`eth1`, `eth2`, `eth3`) has an individual IP address along with the hosts (`client`, `server1`, `server2`). Having a separate IP for every interface on a L3 switch is common practice, as it helps route traffic between different networks correctly. In a real situation, the L3 switch would probably have each interface connect to a  subnetwork -- in this case, we simplify this by just having each interface point to a different host. 
+
+Each interface is generally assigned an IP address from the subnet it is connected to (you may have noticed that the IP address for each interface is similar to the IP address of the host it is connected to). This is because for devices within a subnet to communicate directly with another device, they need to have a **matching subnet mask**, which identifies which IP addresses are **local** (within the subnet) and which are **remote** (outside the subnet). This allows the L3 router to be considered the default gateway for devices within the subnet to communicate with the outside world. 
 
 ### IP Forwarding and ARPs
 Given a raw Ethernet frame, if the frame contains an IP packet whose destination is not one of the router's interfaces:
@@ -311,7 +338,7 @@ When logging, we encourage you to use `spdlog` to log messages at the correct le
 Examples of `spdlog` can be found in `utils.cpp`.
 
 ### Protocols: Logging Packets
-You can log the packets received and generated by your SR program by using the -l parameter. The file will be in `pcap` format, so you can use Wireshark or `tcpdump` to read it.
+You can log the packets received and generated by your SR program by using the -l parameter. The file will be in `pcap` format, so you can use [Wireshark](https://www.wireshark.org/) or `tcpdump` to read it. Wireshark is free to download, and a powerful tool for a variety of applications -- we encourage you to use this project to become familiar with its basic functionality. 
 
 For example,
 ```
