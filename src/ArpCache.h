@@ -23,7 +23,7 @@ public:
 
     ~ArpCache() override;
 
-    void loop();
+    void tick();
 
     void addEntry(uint32_t ip, const mac_addr& mac) override;
 
@@ -32,7 +32,7 @@ public:
     void queuePacket(uint32_t ip, const Packet& packet, const std::string& iface) override;
 
 private:
-    void tick();
+    void loop();
 
     std::chrono::milliseconds timeout;
 
