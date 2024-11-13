@@ -1,6 +1,6 @@
 # Assignment 4: Designing a Static Router
 
-### Due: December 6th, 2023 at 11:59 PM
+### Due: December 6th, 2024 at 11:59 PM
 
 ## Overview
 
