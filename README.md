@@ -55,7 +55,7 @@ For this assignment, you can write all of your code locally (although we will st
 You can also choose to develop on the provided AWS image. 
 
 #### AWS Setup (For Everyone)
-You will find an AMI named TODO with AMI ID  TODO in your AWS account associated with this class, accessed through AWS Learner Lab. Please create a new EC2 instance using this AMI, similar to what you did in Projects 1 and 2. 
+You will find an AMI named something like "489 P4" in your AWS account associated with this class, accessed through AWS Learner Lab. Please create a new EC2 instance using this AMI, similar to what you did in Projects 1 and 2. You can find the Project 1 AWS setup guide [here](aws-setup-p1.pdf) for convenience. 
 
 Your instance type does not have to be particularly beefy; a `t2.medium` works perfectly fine, and even smaller will probably work as well. 
 
