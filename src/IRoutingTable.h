@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <unordered_map>
 #include <string>
 #include <optional>
 
