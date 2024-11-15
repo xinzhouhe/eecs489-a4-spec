@@ -69,6 +69,10 @@ public:
      */
     virtual void setRoutingInterface(const std::string& iface, const mac_addr& mac, const ip_addr& ip) = 0;
 
+    /**
+     * @brief Retrieves all network interfaces in the routing table.
+     * @return A map of interface names to routing interfaces.
+     */
     virtual const std::unordered_map<std::string, RoutingInterface>& getRoutingInterfaces() const = 0;
 };
 
