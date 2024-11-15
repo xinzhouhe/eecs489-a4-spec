@@ -68,6 +68,8 @@ public:
      * @param ip The IP address to assign to the network interface.
      */
     virtual void setRoutingInterface(const std::string& iface, const mac_addr& mac, const ip_addr& ip) = 0;
+
+    virtual const std::unordered_map<std::string, RoutingInterface>& getRoutingInterfaces() const = 0;
 };
 
 #endif //IROUTINGTABLE_H
