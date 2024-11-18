@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Assignment 4: Designing a Static Router | eecs489-a4-spec</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Assignment 4: Designing a Static Router" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="http://localhost:4000/" />
+<meta property="og:url" content="http://localhost:4000/" />
+<meta property="og:site_name" content="eecs489-a4-spec" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Assignment 4: Designing a Static Router" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","headline":"Assignment 4: Designing a Static Router","name":"eecs489-a4-spec","url":"http://localhost:4000/"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="preload" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" as="style" crossorigin="anonymous" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr">
+        <link rel="stylesheet" href="https://eecs485staff.github.io/primer-spec/assets/v1.10/css/primer-spec-base.css">
+
+        <!--
+            This page is formatted using Primer Spec.
+            Would you like to contribute to the theme?
+            Check out: https://github.com/eecs485staff/primer-spec
+        -->
+        <script>
+            window.PrimerSpecConfig = {
+                pdfPath: null, // @managed by build-primer-spec-action
+                siteQualifiedBaseUrl: 'http://localhost:4000/',
+                hideSidebarOnLoad: false,
+                disableSidebar: false,
+                defaultSubthemeName: 'default',
+                defaultSubthemeMode: 'system',
+                sitemapEnabled: false,
+                sitemapUrls: [],
+                sitemapLabel: undefined,
+                sitemapSiteTitle: 'eecs489-a4-spec',
+                useLegacyCodeBlocks: false,
+                defaultCodeblockVariant: "enhanced",
+                disableJokes: false
+            };
+        </script>
+        <script src="https://eecs485staff.github.io/primer-spec/assets/v1.10/js/primer_spec_plugin.min.js" crossorigin="anonymous" defer></script>
+    </head>
+    <body>
+        <div id="primer-spec-top"></div>
+        <div id="primer-spec-app-container" onclick="return true;"></div>
+
+        <div id="primer-spec-plugin-main-content">
+            
+            <h1 class="primer-spec-toc-ignore"><a href="http://localhost:4000/">eecs489-a4-spec</a></h1>
+            
+
+            <h1 id="assignment-4-designing-a-static-router">Assignment 4: Designing a Static Router</h1>
+
+<h3 id="due-december-6th-2024-at-1159-pm">Due: December 6th, 2024 at 11:59 PM</h3>
+
+<h2 id="overview">Overview</h2>
+
+<p>In this assignment, you will be writing a simple router configured with a static routing table. Your router will receive raw Ethernet frames. It will process the packets just like a real router, then forward them to the correct outgoing interface.</p>
+
+<p>Your task is to implement the forwarding logic so packets go to the correct interface.</p>
+
+<p>This is not a simulation: your router <em>will</em> route real packets to HTTP servers sitting behind your router. When you have finished your router, you should be able to access these servers using regular client software (e.g., <code class="language-plaintext highlighter-rouge">wget/curl</code>). In addition, you should be able to <code class="language-plaintext highlighter-rouge">ping</code> and <code class="language-plaintext highlighter-rouge">traceroute</code> to and through a functioning Internet router. This is the topology you will be using for your development:</p>
+
+<p><img src="p4-architecture.png" title="Project 4 Architecture" /></p>
+
+<ul>
+  <li>The yellow parts (i.e. the static router, including implementations of the ARPCache and the RoutingTable classes) is the part that you will be writing. Your static router will control the logic of the Mininet switch.</li>
+  <li>The blue parts are the topology implemented within Mininet, which includes a switch and three hosts (server1, server2, and the client).</li>
+  <li>The POX controller just eases communication between Mininet and your code; you don’t need to think about how it works.</li>
+</ul>
+
+<p><strong>NOTE: From this point in the spec, we use <em>router</em> to refer to the static router that you will be writing, and <em>switch</em> to refer to the Mininet switch.</strong></p>
+
+<blockquote>
+  <p>In general, the terms switch and router are used somewhat confusingly in a networking context. There is a <a href="https://www.cloudflare.com/learning/network-layer/what-is-a-network-switch/">technical difference between them</a>, but modern consumer routers often have built-in switches, so you will hear the two terms used interchangably outside this project.</p>
+</blockquote>
+
+<p>Once your router is functioning correctly, you will be able to perform all of the following operations:</p>
+
+<ul>
+  <li>Ping any of the switch’s interfaces from the hosts.</li>
+  <li>Traceroute to any of the switch’s interface IP addresses.</li>
+  <li>Ping any of the hosts from any other host.</li>
+  <li>Traceroute to any of the hosts from any other host.</li>
+  <li>Download a file using HTTP from one of the HTTP servers.</li>
+</ul>
+
+<p>Additional requirements are laid out in the “Requirements” section.</p>
+
+<ul>
+  <li><a href="#getting-started">Getting Started</a></li>
+  <li><a href="#background">Background</a></li>
+  <li><a href="#code-overview">Code Overview</a></li>
+  <li><a href="#debugging">Debugging</a></li>
+  <li><a href="#submitting">Submitting</a></li>
+  <li><a href="#important-notes">Important Notes</a></li>
+  <li><a href="#faq">FAQ</a></li>
+</ul>
+
+<h2 id="learning-outcomes">Learning Outcomes</h2>
+
+<p>After completing this programming assignment, students should be able to:</p>
+
+<ul>
+  <li>Describe how routers work.</li>
+  <li>Explain how layer 2 and 3 protocols such as ARP and ICMP work.</li>
+</ul>
+
+<p><a name="getting-started"></a></p>
+<h2 id="getting-set-up">Getting Set Up</h2>
+
+<h3 id="prerequisites">Prerequisites</h3>
+<p>For this assignment, you can write all of your code locally (although we will still be using a remote machine to run Mininet and forward the traffic to your local computer). <strong>This is the preferred option.</strong></p>
+
+<p>You can also choose to develop on the provided AWS image.</p>
+
+<h4 id="aws-setup-for-everyone">AWS Setup (For Everyone)</h4>
+<p>You will find an AMI named something like “489 P4” in your AWS account associated with this class, accessed through AWS Learner Lab. Please create a new EC2 instance using this AMI, similar to what you did in Projects 1 and 2. You can find the Project 1 AWS setup guide <a href="aws-setup-p1.pdf">here</a> for convenience.</p>
+
+<p>Your instance type does not have to be particularly beefy; a <code class="language-plaintext highlighter-rouge">t2.medium</code> works perfectly fine, and even smaller will probably work as well.</p>
+
+<p>Once you have this EC2 instance set up, please clone this repository within the machine.</p>
+
+<h4 id="local-setup-if-developing-locally">Local Setup (If Developing Locally)</h4>
+
+<p>If you’re developing on the provided AWS image, you can skip to “Setting Up the Starter Code”.</p>
+
+<p>If you choose to develop locally, you must have CMake, Boost, and Protocol Buffers installed.</p>
+
+<p>If you are on a Mac, this is very easy. Simply use Homebrew and run</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>brew <span class="nb">install </span>cmake boost protobuf
+</code></pre></div></div>
+<p>and you’re done and ready to skip to “Setting Up the Starter Code”.</p>
+
+<p>On Windows or Linux, installing CMake and Boost are also relatively simple. On Ubuntu / WSL, you can run</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>apt-get <span class="nb">install </span>cmake libboost-all-dev
+</code></pre></div></div>
+<p>However, for Protocol Buffers, you will need to build it from source. The following instructions will guide you through the process.</p>
+
+<p>First, run the following command to clone the Protocol Buffers repository:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git clone https://github.com/protocolbuffers/protobuf.git
+</code></pre></div></div>
+
+<p>Then, <code class="language-plaintext highlighter-rouge">cd</code> into the repository by running:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>protobuf
+</code></pre></div></div>
+
+<p>Next, check out a release version of Protocol Buffers by running:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git checkout tags/v28.3
+</code></pre></div></div>
+
+<p>Then, run the following commands in succession to build and install Protocol Buffers:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git submodule update <span class="nt">--init</span> <span class="nt">--recursive</span>
+<span class="nv">$ </span><span class="nb">mkdir </span>cmake/build
+<span class="nv">$ </span><span class="nb">cd </span>cmake/build
+<span class="nv">$ </span>cmake <span class="nt">-Dprotobuf_BUILD_TESTS</span><span class="o">=</span>OFF ../..
+<span class="nv">$ </span>make <span class="nt">-j</span> 8
+<span class="nv">$ </span><span class="nb">sudo </span>make <span class="nb">install</span>
+</code></pre></div></div>
+
+<p>It may take a while to build Protocol Buffers after running the <code class="language-plaintext highlighter-rouge">make</code> command. Once it is done, you should be able to run <code class="language-plaintext highlighter-rouge">protoc --version</code> and see the version of Protocol Buffers you just installed.</p>
+
+<p><strong>Note:</strong> The above command will install Protocol Buffers globally on your system, making it difficult to uninstall. If you want to install it locally, you can run <code class="language-plaintext highlighter-rouge">cmake</code> with the <code class="language-plaintext highlighter-rouge">-DCMAKE_INSTALL_PREFIX</code> flag, and set the corresponding <code class="language-plaintext highlighter-rouge">-DProtobuf_DIR</code> flag when building the starter code or <a href="https://mcuoneclipse.com/2023/12/03/building-with-cmake-presets/">use a CMake preset with cache variables</a> when building your project.</p>
+
+<p>Finally, make sure you have <code class="language-plaintext highlighter-rouge">venv</code> installed (it is usually pre-installed on most Python distributions). If not, use Google to find out how to install it for your specific OS.</p>
+
+<h3 id="setting-up-the-starter-code">Setting Up the Starter Code</h3>
+<p>This section should be completed wherever you are planning on developing, whether locally or on AWS.</p>
+
+<p>First, download the starter code by cloning this repository. Then, run <code class="language-plaintext highlighter-rouge">setup.sh</code> to set up the environment. This script will create the Protocol Buffers files and create a virtual environment for Python that other scripts will use.</p>
+
+<h3 id="running-the-starter-code">Running the Starter Code</h3>
+
+<p>The provided code contains three parts:</p>
+<h4 id="static-router">Static Router</h4>
+
+<p>This is the only part of the code that you will be writing. It is a simple router that forwards packets based on a static routing table. More on this later.</p>
+
+<h4 id="pox-controller">POX Controller</h4>
+
+<p>The POX controller allows the Mininet switch to communicate with the router. The flow-chart of communication looks like this:</p>
+
+<pre><code class="language-aiignore">Mininet Host --&gt; Mininet Switch: "Hey, I have this packet for you."
+Mininet Switch --&gt; POX Controller: "Hey, this packet just came in, what should I do with it?"
+POX Controller --&gt; Your Router: "Hey, this packet just came in. Let me know if I should send out any packets soon, and if so, out of which interface."
+Your Router --&gt; POX Controller: "Send out this packet out of this interface."
+POX Controller --&gt; Mininet Switch: "Send out this packet out of this interface."
+Mininet Switch --&gt; Another Mininet Host: "I have this packet for you."
+</code></pre>
+
+<h4 id="mininet-topology">Mininet Topology</h4>
+
+<p>The Mininet topology is a simple network with three hosts and a switch. The hosts are <code class="language-plaintext highlighter-rouge">client</code>, <code class="language-plaintext highlighter-rouge">server1</code>, and <code class="language-plaintext highlighter-rouge">server2</code>. The switch is a simple switch that forwards packets out of the given interface.</p>
+
+<h2 id="the-router">The Router</h2>
+
+<h3 id="understanding-a-routing-table-file">Understanding a Routing Table File</h3>
+<p>Each line in the routing table (rtable) file is a routing entry and has the following format:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>prefix        next_hop     netmask          interface
+</code></pre></div></div>
+
+<p>Here is the default routing table that you will find on the VM. The first entry is the default route.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.0.0.0       10.0.1.100   0.0.0.0          eth3
+192.168.2.2   192.168.2.2  255.255.255.255  eth1
+172.64.3.10   172.64.3.10  255.255.255.255  eth2
+</code></pre></div></div>
+<p>Note that your code should be able to handle any valid routing table, as we will test it with different topologies on the autograder.</p>
+
+<h3 id="building-and-running">Building and Running</h3>
+<p>You should now have all the pieces needed to build and run the router:</p>
+
+<ul>
+  <li>A routing table file that corresponds to the routing table for the router node in that topology</li>
+  <li>The starter code</li>
+</ul>
+
+<p>You first want to ssh into the AWS remote host, forwarding the port for Mininet if running locally. You can do this by running the following command:</p>
+
+<p><strong>If you are running the server and POX locally:</strong></p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh <span class="nt">-i</span> &lt;your-key.pem&gt; <span class="nt">-R</span> 6633:localhost:6633 ubuntu@&lt;your-aws-ip&gt;
+</code></pre></div></div>
+
+<p><strong>If you are running the server and POX on the AWS remote host:</strong></p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh <span class="nt">-i</span> &lt;your-key.pem&gt; ubuntu@&lt;your-aws-ip&gt;
+</code></pre></div></div>
+
+<blockquote>
+  <p>6633 is the default port used by POX for communication. Do not try to use a different port; this is not an arbitrary choice.</p>
+</blockquote>
+
+<p>You can build and run the starter code as follows:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">mkdir </span>build
+<span class="nv">$ </span><span class="nb">cd </span>build
+<span class="nv">$ </span>cmake ..
+<span class="nv">$ </span>make
+</code></pre></div></div>
+<p>First, run POX wherever you are developing your code:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>./run_pox.sh
+</code></pre></div></div>
+
+<p><strong>On the AWS remote host</strong>, run the following command:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>./run_mininet.sh
+</code></pre></div></div>
+
+<p>Mininet and POX need to be started for your router to run.</p>
+
+<blockquote>
+  <p>Note: Mininet will connect to POX, so POX should be running first. However, it is okay if you need to restart POX while Mininet is running, as long as there is not a large amount of time where Mininet is running but POX is not.*</p>
+</blockquote>
+
+<p>Now, you can run the router (again, wherever you are developing your code):</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>./StaticRouter <span class="nt">-r</span> ../rtable
+</code></pre></div></div>
+
+<p>By default, SR looks for <code class="language-plaintext highlighter-rouge">rtable</code> from the current working directory. This can be overridden by the <code class="language-plaintext highlighter-rouge">-r</code> option.</p>
+
+<p>In summary, always run Mininet on AWS:</p>
+<ul>
+  <li>If you are developing on AWS, run POX and StaticRouter on AWS as well.</li>
+  <li>If you are developing locally, set up reverse port forwarding for Port 6633 (with the command provided above). Run POX and StaticRouter locally.</li>
+</ul>
+
+<p><a name="background"></a></p>
+<h2 id="background-routing">Background: Routing</h2>
+<blockquote>
+  <p>The term “router” in this section refers to both the Mininet switch and your router, as your router is an implementation detail of the switch to any Mininet hosts that interact with the switch.</p>
+</blockquote>
+
+<p>This section has an outline of the forwarding logic for a router, although it does not contain all the details. There are two main parts to this assignment: IP forwarding and handling ARP.</p>
+
+<p>When an IP packet arrives at the router, it arrives inside an Ethernet frame. Your router needs to check if it is the final destination of the packet, and if not, forward it along the correct link based on its forwarding table. The forwarding table names the IP address of the next hop. The router must use ARP to learn the Ethernet address of the next hop IP address, so it can address the Ethernet frame correctly.</p>
+
+<h3 id="a-note-on-ip-addresses">A Note on IP Addresses</h3>
+<p>Every interface on the Mininet switch (<code class="language-plaintext highlighter-rouge">eth1</code>, <code class="language-plaintext highlighter-rouge">eth2</code>, <code class="language-plaintext highlighter-rouge">eth3</code>) has an individual IP address along with the hosts (<code class="language-plaintext highlighter-rouge">client</code>, <code class="language-plaintext highlighter-rouge">server1</code>, <code class="language-plaintext highlighter-rouge">server2</code>). Having a separate IP for every interface on a L3 switch is common practice, as it helps route traffic between different networks correctly. In a real situation, the L3 switch would probably have each interface connect to a  subnetwork – in this case, we simplify this by just having each interface point to a different host.</p>
+
+<p>Each interface is generally assigned an IP address from the subnet it is connected to (you may have noticed that the IP address for each interface is similar to the IP address of the host it is connected to). This is because for devices within a subnet to communicate directly with another device, they need to have a <strong>matching subnet mask</strong>, which identifies which IP addresses are <strong>local</strong> (within the subnet) and which are <strong>remote</strong> (outside the subnet). This allows the L3 router to be considered the default gateway for devices within the subnet to communicate with the outside world.</p>
+
+<h3 id="ip-forwarding-and-arps">IP Forwarding and ARPs</h3>
+<p>Given a raw Ethernet frame, if the frame contains an IP packet whose destination is not one of the router’s interfaces:</p>
+
+<ol>
+  <li>Check that the packet is valid (has a correct checksum).</li>
+  <li>Decrement the TTL by 1, and recompute the packet checksum over the modified header.</li>
+  <li>Find out which entry in the routing table has the longest prefix match with the destination IP address.</li>
+  <li>Check the ARP cache for the next-hop MAC address corresponding to the next-hop IP. If it’s there, send it. Otherwise, send an ARP request for the next-hop IP (if one hasn’t been sent within the last second), and add the packet to the queue of packets waiting on this ARP request.</li>
+</ol>
+
+<p>This is a high-level overview of the forwarding process. More low-level details are below. For example, if an error occurs in any of the above steps, you will have to send an ICMP message back to the sender notifying them of an error. You may also get an ARP request or reply, which has to interact with the ARP cache correctly.</p>
+
+<h3 id="protocols-to-understand">Protocols to Understand</h3>
+
+<h4 id="ethernet">Ethernet</h4>
+<p>You are given a raw Ethernet frame and have to send raw Ethernet frames. You should understand source and destination MAC addresses and the idea that we forward a packet one hop by changing the destination MAC address of the forwarded packet to the MAC address of the next hop’s incoming interface.</p>
+
+<h4 id="internet-protocol">Internet Protocol</h4>
+<p>Before operating on an IP packet, you should verify its checksum. Packets with checksum mismatch are discarded. You should understand how to find the longest prefix match of a destination IP address in the routing table described in the <a href="#getting-started">Getting Started</a> section. If you determine that a datagram should be forwarded, you should correctly decrement the TTL field of the header and recompute the checksum over the changed header before forwarding it to the next hop.</p>
+
+<h4 id="internet-control-message-protocol">Internet Control Message Protocol</h4>
+<p>ICMP sends control information. In this assignment, your router will use ICMP to send messages back to a sending host. You will need to properly generate the following ICMP messages (including the ICMP header checksum) in response to the sending host under the following conditions:</p>
+
+<ul>
+  <li><strong>Echo reply (type 0):</strong> Sent in response to an echo request (<code class="language-plaintext highlighter-rouge">ping</code>) to one of the router’s interfaces. (This is only for echo requests to any of the router’s IPs. An echo request sent elsewhere should be forwarded).</li>
+  <li><strong>Destination net unreachable (type 3, code 0):</strong> Sent if there is a non-existent route to the destination IP (no matching entry in routing table when forwarding an IP packet).</li>
+  <li><strong>Destination host unreachable (type 3, code 1):</strong> Sent after seven ARP requests were sent to the next-hop IP without a response.</li>
+  <li><strong>Port unreachable (type 3, code 3):</strong> Sent if an IP packet containing a UDP or TCP payload is sent to one of the router’s interfaces. This is needed for <code class="language-plaintext highlighter-rouge">traceroute</code> to work.</li>
+  <li><strong>Time exceeded (type 11, code 0):</strong> Sent if an IP packet is discarded during processing because the TTL field is 0. This is also needed for <code class="language-plaintext highlighter-rouge">traceroute</code> to work.</li>
+</ul>
+
+<p>Some ICMP messages may come from the source address of any of the router interfaces, while others must come from a specific interface. Please refer to <a href="https://tools.ietf.org/html/rfc792">RFC 792</a> for details. As mentioned above, the only incoming ICMP message destined towards the router’s IPs that you have to explicitly process are ICMP echo requests. You may want to create additional structs for ICMP messages for convenience, but make sure to use the <code class="language-plaintext highlighter-rouge">packed</code> attribute so that the compiler doesn’t try to align the fields in the struct to word boundaries. To learn more, feel free to look at <a href="https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Type-Attributes.html">GCC Type Attributes</a>.</p>
+
+<h4 id="address-resolution-protocol">Address Resolution Protocol</h4>
+<p>ARP is needed to determine the next-hop MAC address that corresponds to the next-hop IP address stored in the routing table. Without the ability to generate an ARP request and process ARP replies, your router would not be able to fill out the destination MAC address field of the raw Ethernet frame you are sending over the outgoing interface. Analogously, without the ability to process ARP requests and generate ARP replies, no other router could send your router Ethernet frames. Therefore, your router must generate and process ARP requests and replies.</p>
+
+<p>To lessen the number of ARP requests sent out, you are required to cache ARP replies. Cache entries should time out after a given amount of time to minimize staleness. The provided ARP cache class already times the entries out for you.</p>
+
+<p>When forwarding a packet to a next-hop IP address, the router should first check the ARP cache for the corresponding MAC address before sending an ARP request. In the case of a cache miss, an ARP request should be sent to a target IP address about once every second until a reply comes in. If the ARP request is sent seven times with no reply, an ICMP destination host unreachable is sent back to the source IP as stated above. The provided ARP request queue will help you manage the request queue.</p>
+
+<p>In the case of an ARP request, you should only send an ARP reply if the target IP address is one of your router’s IP addresses.</p>
+
+<p>Note: ARP requests are sent to the broadcast MAC address (<code class="language-plaintext highlighter-rouge">ff-ff-ff-ff-ff-ff</code>). ARP replies are sent directly to the requester’s MAC address.</p>
+
+<h4 id="ip-packet-destinations">IP Packet Destinations</h4>
+<p>An incoming IP packet may be destined for one of your router’s IP addresses, or it may be destined elsewhere. If it is sent to one of your router’s IP addresses, you should take the following actions, consistent with the section on protocols above:</p>
+
+<ul>
+  <li>If the packet is an ICMP echo request and its checksum is valid, send an ICMP echo reply to the sending host.</li>
+  <li>If the packet contains a TCP or UDP payload, send an ICMP port unreachable to the sending host.</li>
+  <li>Otherwise, ignore the packet.</li>
+</ul>
+
+<p>Packets destined elsewhere should be forwarded using your normal forwarding logic.</p>
+
+<p><a name="code-overview"></a></p>
+<h2 id="code-overview">Code Overview</h2>
+
+<h3 id="classes">Classes</h3>
+<p><strong>Note:</strong> You can and should modify the provided classes as you need (please don’t try to write all your code in the <code class="language-plaintext highlighter-rouge">handlePacket</code> function for the <code class="language-plaintext highlighter-rouge">StaticRouter</code>). You are even free to modify/delete all of the starter code.</p>
+
+<p>The only requirements are that:</p>
+<ul>
+  <li>The <code class="language-plaintext highlighter-rouge">IPacketSender.h</code> file is not modified.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">IArpCache.h</code> file is not modified.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">IRoutingTable.h</code> file is not modified.</li>
+  <li>The signatures of <code class="language-plaintext highlighter-rouge">StaticRouter</code>’s constructor and <code class="language-plaintext highlighter-rouge">handlePacket</code> function are not modified.</li>
+</ul>
+
+<p>You may find it helpful to look at the <code class="language-plaintext highlighter-rouge">IArpCache.h</code> and <code class="language-plaintext highlighter-rouge">RoutingTable.h</code> classes to understand the different structures and functions you will be working with.</p>
+
+<h4 id="the-router-staticrouterhcpp">The Router (<code class="language-plaintext highlighter-rouge">StaticRouter.h/cpp</code>)</h4>
+<p>You must implement the forwarding logic in <code class="language-plaintext highlighter-rouge">StaticRouter.cpp</code>. The router is a simple router that forwards packets based on a static routing table. The router will receive raw Ethernet frames and process the packets just like a real router, then forward them to the correct outgoing interface.</p>
+
+<p>The router takes in a class that implements the <code class="language-plaintext highlighter-rouge">PacketSender</code> interface. This interface exposes a <code class="language-plaintext highlighter-rouge">sendPacket</code> function that allows you to tell the switch to send a packet out of a specific interface. The router will use this interface to send packets out of an interface.</p>
+
+<h4 id="the-routing-table-routingtablehcpp">The Routing Table (<code class="language-plaintext highlighter-rouge">RoutingTable.h/cpp</code>)</h4>
+<p>You must implement the longest prefix match algorithm in <code class="language-plaintext highlighter-rouge">RoutingTable.cpp</code>.</p>
+
+<p>The routing table in code is read on from a file (default filename <code class="language-plaintext highlighter-rouge">rtable</code>, can be set with command line option <code class="language-plaintext highlighter-rouge">-r</code>). The routing table allows you to look up the information of a interface, and also the next hop IP address and interface for a given destination IP address.</p>
+
+<h4 id="the-arp-cache-and-arp-request-queue-arpcachehcpp">The ARP Cache and ARP Request Queue (<code class="language-plaintext highlighter-rouge">ArpCache.h/cpp</code>)</h4>
+<p>You must implement most of the functions in <code class="language-plaintext highlighter-rouge">ArpCache.cpp</code>. The ARP cache is a simple cache that maps IP addresses to MAC addresses. The cache is used to store ARP replies and is used to fill out the destination MAC address of the Ethernet frame when forwarding packets. The cache also times out entries after a given amount of time.</p>
+
+<h4 id="protocol-headers-protocolh">Protocol Headers (<code class="language-plaintext highlighter-rouge">protocol.h</code>)</h4>
+<p>Within the router framework you will be dealing directly with raw Ethernet packets. The stub code itself provides some data structures in <code class="language-plaintext highlighter-rouge">protocols.h</code> which you may use to manipulate headers easily. There are a number of resources which describe the protocol headers in detail. RFC Editor provides the specifications of the packet formats you’ll be dealing with:</p>
+
+<ul>
+  <li><a href="https://www.rfc-editor.org/rfc/rfc826.html">Ethernet and ARP</a></li>
+  <li><a href="https://www.rfc-editor.org/rfc/rfc791">IP</a></li>
+  <li><a href="https://www.rfc-editor.org/rfc/rfc792">ICMP</a></li>
+</ul>
+
+<p><a name="requirements"></a></p>
+<h2 id="requirements">Requirements</h2>
+<p>In summary, your solution:</p>
+
+<ol>
+  <li>MUST correctly generate ARP request packets.</li>
+  <li>MUST correctly respond to ARP request packets.
+    <ul>
+      <li>It MUST only respond if appropriate.</li>
+      <li>It MUST respond from the proper interface.</li>
+      <li>Responses MUST be unicast.</li>
+    </ul>
+  </li>
+  <li>MUST correctly handle ARP response packets by populating the ARP cache.</li>
+  <li>MUST generate the correct ICMP messages for these cases:
+    <ul>
+      <li>Receive an ICMP echo request.</li>
+      <li>A received packet’s destination has no forwarding table entry.</li>
+      <li>The router cannot determine the link layer address of a packet’s next hop. “cannot determine” means there is no ARP entry and 7 consecutive ARP requests fail.</li>
+      <li>A UDP or TCP packet is sent to one of the router’s interfaces. This MUST generate an ICMP port unreachable message.</li>
+      <li>A packet’s TTL, after being decremented, is 0.</li>
+    </ul>
+  </li>
+  <li>The router MUST correctly route packets using IPv4 between the Internet and the application servers.
+    <ul>
+      <li>It MAY assume no IP options are used.</li>
+      <li>It MUST correctly validate and generate checksums.</li>
+      <li>It MUST decrement the TTL.</li>
+      <li>It MUST forward packets using the forwarding table, selecting an entry with the longest prefix match algorithm.</li>
+      <li>Note that an Ethernet frame payload may be larger than the encapsulated IP packet. That is, there may be some padding bytes after the IP packet. This can occur when an Ethernet interface tries to align frames on 4-byte boundaries.</li>
+    </ul>
+  </li>
+  <li>MUST correctly handle <code class="language-plaintext highlighter-rouge">traceroutes</code> through it (where it is not the end host) and to it (where it is the end host).</li>
+  <li>MUST maintain an ARP cache whose entries are invalidated after a timeout period (the timeout duration is provided to the ARP Cache when it is created).</li>
+  <li>MUST NOT drop a packet unless there is no matching forwarding table entry, the router cannot determine the next hop link address, or cannot parse the packet.</li>
+  <li>MUST queue all packets waiting for outstanding ARP replies.</li>
+  <li>SHOULD drop a packet waiting for an ARP reply after 7 failed requests for a reply since receiving the packet.</li>
+</ol>
+
+<h3 id="faq">FAQ</h3>
+<ul>
+  <li>If you get a packet with TTL=1, you should send a ICMP Time To Live Exceeded Message. If you get a packet with TTL=0 somehow, you should feel free to drop it.</li>
+  <li>If you get a ping request for one of the switch’s interfaces, you should not send an ARP request to figure out where to respond, as you already know what the destination MAC address should be. At the same time, no mapping not explicitly figured out from an ARP response should enter your ARP cache.</li>
+  <li>Values in the routing table are in network order.</li>
+</ul>
+
+<p><a name="debugging"></a></p>
+<h2 id="how-to-debug">How to Debug</h2>
+
+<p>Because your error might be due to some tiny, low-level mistake, trying to read through pages and pages of output is a waste of time. While logging is of course useful, you will be able to debug your code much faster if you also log packets and use a debugger.</p>
+
+<p>We highly encourage you to take advantage of the fact the project uses CMake. There are various tools for IDEs that make it very easy to compile, run, and debug your code.</p>
+<ul>
+  <li>For Visual Studio Code, you can use the CMake Tools extension to build and debug your code.</li>
+  <li>For CLion, the IDE comes with native support for CMake projects so you can run and debug your code with a single click.</li>
+</ul>
+
+<p>When logging, we encourage you to use <code class="language-plaintext highlighter-rouge">spdlog</code> to log messages at the correct level. This will allow you to filter out messages that are not relevant to your current debugging task.</p>
+
+<p>Examples of <code class="language-plaintext highlighter-rouge">spdlog</code> can be found in <code class="language-plaintext highlighter-rouge">utils.cpp</code>.</p>
+
+<h3 id="protocols-logging-packets">Protocols: Logging Packets</h3>
+<p>You can log the packets received and generated by your SR program by using the -l parameter. The file will be in <code class="language-plaintext highlighter-rouge">pcap</code> format, so you can use <a href="https://www.wireshark.org/">Wireshark</a> or <code class="language-plaintext highlighter-rouge">tcpdump</code> to read it. Wireshark is free to download, and a powerful tool for a variety of applications – we encourage you to use this project to become familiar with its basic functionality.</p>
+
+<p>For example,</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./StaticRouter -p my_prefix
+</code></pre></div></div>
+<p>will output <code class="language-plaintext highlighter-rouge">my_prefix_input.pcap</code> and <code class="language-plaintext highlighter-rouge">my_prefix_output.pcap</code>.</p>
+
+<p>Besides SR, you can also use Mininet to monitor the traffic that goes in and out of the emulated nodes, i.e., <code class="language-plaintext highlighter-rouge">router</code>, <code class="language-plaintext highlighter-rouge">server1</code> and <code class="language-plaintext highlighter-rouge">server2</code>. Mininet provides direct access to each emulated node. Using server1 as an example, to see the packets in and out of it, go to the Mininet CLI:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mininet&gt; server1 sudo tcpdump -n -i server1-eth0
+</code></pre></div></div>
+<h3 id="router">Router</h3>
+<h4 id="debugging-functions">Debugging Functions</h4>
+<p>We have provided you with some basic debugging functions in <code class="language-plaintext highlighter-rouge">utils.h</code>, <code class="language-plaintext highlighter-rouge">utils.c</code>. Feel free to use them to print out network header information from your packets. Below are some functions you may find useful:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">print_hdrs(uint8_t *buf, uint32_t length)</code>
+Prints out all possible headers starting from the Ethernet header in the packet.</li>
+  <li><code class="language-plaintext highlighter-rouge">print_addr_ip_int(uint32_t ip)</code>
+Prints out a formatted IP address from a <code class="language-plaintext highlighter-rouge">uint32_t</code>. Make sure you are passing the IP address in the correct byte ordering.</li>
+</ul>
+
+<p><a name="submitting"></a></p>
+<h2 id="submitting">Submitting</h2>
+<p>Submission to the autograder will be done <a href="https://g489.eecs.umich.edu/">here</a>. Submission policy will be announced when the autograder is released, which we anticipate being around halfway through the assignment.</p>
+
+<p>This assignment follows more of a fill-in-the-blank format than the first three, meaning we provide code skeleton that you fill in. Therefore,</p>
+
+<p>The submission may include any files that you have modified or added. However, <strong>you must ensure that:</strong></p>
+<ul>
+  <li>The <code class="language-plaintext highlighter-rouge">IPacketSender.h</code> file is not modified.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">IArpCache.h</code> file is not modified.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">IRoutingTable.h</code> file is not modified.</li>
+  <li>The signatures of <code class="language-plaintext highlighter-rouge">StaticRouter</code>’s constructor and <code class="language-plaintext highlighter-rouge">handlePacket</code> function are not modified.</li>
+</ul>
+
+<p><a name="important-notes"></a></p>
+
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>This programming assignment is based on Stanford’s lab 3 from CS 144: Introduction to Computer Networking and translated into C++ by the University of Michigan’s EECS 489 F24 staff.</p>
+
+
+            
+        </div> <!-- .container-lg -->
+
+        
+    </body>
+</html>
