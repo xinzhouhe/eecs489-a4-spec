@@ -1,3 +1,7 @@
+---
+layout: spec
+---
+
 # Assignment 4: Designing a Static Router
 
 ### Due: December 6th, 2024 at 11:59 PM
